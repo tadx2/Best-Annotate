@@ -9,7 +9,7 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedIndexedAccess": true,
 		"moduleResolution": "node",
-		"ignoreDeprecations": "6.0",
+		"ignoreDeprecations": "5.0",
 		"isolatedModules": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
