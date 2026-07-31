@@ -9,10 +9,9 @@ import {
 } from 'obsidian';
 import {
 	createFastGroupPreset,
-	DEFAULT_BUTTON_TEXT_COLOR,
-	DEFAULT_GROUP_COLOR,
 	FastGroupPreset,
 } from './fast-group';
+import { renderTextGroupAppearanceSettings } from './ui/text-group-appearance-settings';
 
 const DEFAULT_TEST_TEXT =
 	'This is a test text for debugging in developer mode.这是一段测试文字，用于开发者模式下调试。これは開発者モードでデバッグするためのテスト文章です。이것은 개발자 모드에서 디버깅하기 위한 테스트 텍스트입니다.Ceci est un texte de test pour le débogage en mode développeur.Dies ist ein Testtext zum Debuggen im Entwicklermodus.Este es un texto de prueba para depuración en modo desarrollador.Это тестовый текст для отладки в режиме разработчика.هذا نص اختباري للتصحيح في وضع المطور.';
@@ -182,7 +181,7 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 			.setName('Button color')
 			.addColorPicker((colorPicker) => {
 				colorPicker
-					.setValue(preset.buttonColor ?? DEFAULT_GROUP_COLOR)
+					.setValue(preset.buttonColor)
 					.onChange(async (value) => {
 						preset.buttonColor = value;
 						await this.plugin.saveSettings();
@@ -193,136 +192,16 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 			.setName('Button text color')
 			.addColorPicker((colorPicker) => {
 				colorPicker
-					.setValue(
-						preset.buttonTextColor ?? DEFAULT_BUTTON_TEXT_COLOR,
-					)
+					.setValue(preset.buttonTextColor)
 					.onChange(async (value) => {
 						preset.buttonTextColor = value;
 						await this.plugin.saveSettings();
 					});
 			});
 
-		content.createDiv({
-			cls: 'ba-annotate-settings-heading',
-			text: 'Text',
+		renderTextGroupAppearanceSettings(content, preset.appearance, {
+			onChange: () => this.plugin.saveSettings(),
 		});
-		new Setting(content)
-			.setName('Text color')
-			.addColorPicker((colorPicker) => {
-				colorPicker
-					.setValue(preset.textColor)
-					.onChange(async (value) => {
-						preset.textColor = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Text background')
-			.addColorPicker((colorPicker) => {
-				colorPicker
-					.setValue(
-						preset.textBackgroundColor ?? DEFAULT_GROUP_COLOR,
-					)
-					.onChange(async (value) => {
-						preset.textBackgroundColor = value;
-						await this.plugin.saveSettings();
-					});
-			})
-			.addExtraButton((button) => {
-				button
-					.setIcon('x')
-					.setTooltip('Clear background')
-					.onClick(async () => {
-						preset.textBackgroundColor = undefined;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		content.createDiv({
-			cls: 'ba-annotate-settings-heading',
-			text: 'Underline',
-		});
-		new Setting(content)
-			.setName('Show underline')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(preset.underline)
-					.onChange(async (value) => {
-						preset.underline = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Underline color')
-			.addColorPicker((colorPicker) => {
-				colorPicker
-					.setValue(preset.underlineColor)
-					.onChange(async (value) => {
-						preset.underlineColor = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		content.createDiv({
-			cls: 'ba-annotate-settings-heading',
-			text: 'Annotate',
-		});
-		new Setting(content)
-			.setName('Annotate text')
-			.addText((input) => {
-				input
-					.setValue(preset.annotate)
-					.onChange(async (value) => {
-						preset.annotate = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Annotate color')
-			.addColorPicker((colorPicker) => {
-				colorPicker
-					.setValue(preset.annotateColor)
-					.onChange(async (value) => {
-						preset.annotateColor = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Show annotate')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(preset.annotateVisible)
-					.onChange(async (value) => {
-						preset.annotateVisible = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Display below')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(preset.annotatePosition === 'under')
-					.onChange(async (value) => {
-						preset.annotatePosition = value ? 'under' : 'over';
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Compact layout')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(preset.annotateCompact)
-					.onChange(async (value) => {
-						preset.annotateCompact = value;
-						await this.plugin.saveSettings();
-					});
-			});
 
 		new Setting(content)
 			.setName('Delete preset')

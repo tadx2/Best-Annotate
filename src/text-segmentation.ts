@@ -4,20 +4,6 @@ export interface TextSegment {
 	end: number;
 }
 
-export interface TextGroup {
-	start: number;
-	end: number;
-	textColor?: string;
-	textBackgroundColor?: string;
-	underline?: boolean;
-	underlineColor?: string;
-	annotate?: string;
-	annotateColor?: string;
-	annotateVisible?: boolean;
-	annotatePosition?: 'over' | 'under';
-	annotateCompact?: boolean;
-}
-
 const SEGMENT_PATTERN =
 	/\p{Script=Han}|[\p{Script=Latin}\p{M}]+(?:['’][\p{Script=Latin}\p{M}]+)*|\p{N}+(?:[.,]\p{N}+)*|[^\s]/gu;
 

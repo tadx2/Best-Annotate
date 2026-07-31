@@ -1,21 +1,13 @@
 import { Editor, EditorPosition, MarkdownView, Notice, Plugin } from 'obsidian';
 import { BetterAnnotateSettings } from './settings';
-import { TextGroup } from './text-segmentation';
 import {
-	ANNOTATE_COLOR_ATTRIBUTE,
-	ANNOTATE_COMPACT_ATTRIBUTE,
-	ANNOTATE_POSITION_ATTRIBUTE,
-	ANNOTATE_VISIBLE_ATTRIBUTE,
-	appendAnnotatedText,
-	TEXT_BACKGROUND_COLOR_ATTRIBUTE,
-	TEXT_COLOR_ATTRIBUTE,
-	UNDERLINE_ATTRIBUTE,
-	UNDERLINE_COLOR_ATTRIBUTE,
-} from './text-group-renderer';
-import { EditAnnotateModal } from './ui/annotate-modal';
+	ANNOTATE_ID_ATTRIBUTE,
+	createAnnotateElement,
+	readAnnotateElement,
+} from './text-group/dom';
+import { TextGroup } from './text-group/types';
+import { EditAnnotateModal } from './ui/edit-annotate-modal';
 import { CreateAnnotateModal } from './ui/create-annotate-modal';
-
-const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
 
 export function registerAnnotateMenu(
 	plugin: Plugin,
@@ -63,7 +55,7 @@ export function registerAnnotateMenu(
 		const id = annotate.getAttribute(ANNOTATE_ID_ATTRIBUTE);
 		const view = plugin.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!id || !view) return;
-		const content = extractAnnotateContent(annotate);
+		const content = readAnnotateElement(annotate);
 
 		openEditAnnotateModal(
 			plugin,
@@ -178,69 +170,7 @@ function createAnnotateBlock(
 	text: string,
 	textGroups: TextGroup[],
 ) {
-	const annotate = createDiv();
-	annotate.setAttribute(ANNOTATE_ID_ATTRIBUTE, id);
-	appendAnnotatedText(annotate, text, textGroups);
-	return annotate.outerHTML;
-}
-
-function extractAnnotateContent(annotate: HTMLElement) {
-	let text = '';
-	const textGroups: TextGroup[] = [];
-
-	const visit = (node: Node) => {
-		if (node.nodeType === Node.TEXT_NODE) {
-			text += node.textContent ?? '';
-			return;
-		}
-		if (!node.instanceOf(HTMLElement)) return;
-		if (node.tagName === 'BR') {
-			text += '\n';
-			return;
-		}
-		if (node.tagName === 'RT' || node.tagName === 'RP') return;
-
-		if (node.tagName === 'RUBY') {
-			const start = text.length;
-			const annotateText = Array.from(node.children).find(
-				(child) => child.tagName === 'RT',
-			)?.textContent ?? '';
-			node.childNodes.forEach(visit);
-			if (text.length > start) {
-				textGroups.push({
-					start,
-					end: text.length,
-					textColor:
-						node.getAttribute(TEXT_COLOR_ATTRIBUTE) ?? undefined,
-					textBackgroundColor:
-						node.getAttribute(TEXT_BACKGROUND_COLOR_ATTRIBUTE) ??
-						undefined,
-					underline:
-						node.getAttribute(UNDERLINE_ATTRIBUTE) === 'true' ||
-						node.querySelector('u') !== null,
-					underlineColor:
-						node.getAttribute(UNDERLINE_COLOR_ATTRIBUTE) ?? undefined,
-					annotate: annotateText,
-					annotateColor:
-						node.getAttribute(ANNOTATE_COLOR_ATTRIBUTE) ?? undefined,
-					annotateVisible:
-						node.getAttribute(ANNOTATE_VISIBLE_ATTRIBUTE) !== 'false',
-					annotatePosition:
-						node.getAttribute(ANNOTATE_POSITION_ATTRIBUTE) === 'over'
-							? 'over'
-							: 'under',
-					annotateCompact:
-						node.getAttribute(ANNOTATE_COMPACT_ATTRIBUTE) !== 'false',
-				});
-			}
-			return;
-		}
-
-		node.childNodes.forEach(visit);
-	};
-
-	annotate.childNodes.forEach(visit);
-	return { text, textGroups };
+	return createAnnotateElement(document, id, text, textGroups).outerHTML;
 }
 
 function offsetPosition(
