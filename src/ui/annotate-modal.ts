@@ -332,6 +332,7 @@ export class AnnotateModal extends Modal {
 		}
 
 		event.preventDefault();
+		this.clearSelectedTextGroup();
 		this.activePointerId = event.pointerId;
 		this.dragShouldSelect = !this.selectedIndices.has(segment.index);
 		this.draggedIndices.clear();
@@ -385,6 +386,7 @@ export class AnnotateModal extends Modal {
 			this.selectTextGroup(groupIndex);
 			return;
 		}
+		this.clearSelectedTextGroup();
 
 		if (this.selectedIndices.has(index)) {
 			this.selectedIndices.delete(index);
@@ -446,9 +448,26 @@ export class AnnotateModal extends Modal {
 	}
 
 	private selectTextGroup(index: number) {
+		this.selectedIndices.clear();
 		this.selectedTextGroupIndex =
 			this.selectedTextGroupIndex === index ? null : index;
 		this.renderSegments();
+		this.renderTextGroups();
+		this.renderGroupSettings();
+	}
+
+	private clearSelectedTextGroup() {
+		if (this.selectedTextGroupIndex === null) return;
+
+		this.selectedTextGroupIndex = null;
+		this.segmentsEl
+			.querySelectorAll<HTMLButtonElement>('.ba-annotate-segment')
+			.forEach((button) => {
+				const index = Number(button.dataset.segmentIndex);
+				if (Number.isInteger(index)) {
+					this.updateSegmentButton(button, index);
+				}
+			});
 		this.renderTextGroups();
 		this.renderGroupSettings();
 	}

@@ -45,20 +45,17 @@
 }
 
 .ba-annotate-segment.is-grouped {
-	border-color: var(--ba-text-group-color);
-	color: var(--ba-text-group-color);
+	background-color: var(--background-secondary);
+	border-color: var(--background-modifier-border);
+	color: var(--interactive-accent);
 	cursor: pointer;
-	opacity: 0.75;
+	opacity: 1;
 }
 
 .ba-annotate-segment.is-active-text-group {
-	background-color: color-mix(
-		in srgb,
-		var(--ba-text-group-color) 20%,
-		transparent
-	);
-	border-color: var(--ba-text-group-color);
-	color: var(--ba-text-group-color);
+	background-color: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent);
 	opacity: 1;
 }
 
@@ -92,12 +89,9 @@ div[data-ba-annotate-id] ruby[data-ba-rt-position='under'] {
 }
 
 .ba-annotate-text-group.is-active {
-	background-color: color-mix(
-		in srgb,
-		var(--ba-text-group-color) 20%,
-		transparent
-	);
-	color: var(--ba-text-group-color);
+	background-color: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent);
 }
 
 .ba-annotate-actions {
