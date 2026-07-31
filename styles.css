@@ -212,20 +212,6 @@
 	opacity: 0.5;
 }
 
-.ba-annotate-fast-group-preset {
-	border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.ba-annotate-fast-group-preset > summary {
-	cursor: pointer;
-	padding: var(--size-4-3) 0;
-	font-weight: var(--font-semibold);
-}
-
-.ba-annotate-fast-group-preset-content {
-	padding-inline-start: var(--size-4-3);
-}
-
 .ba-annotate-actions {
 	display: flex;
 	align-items: center;

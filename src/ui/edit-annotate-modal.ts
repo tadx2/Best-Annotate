@@ -151,7 +151,7 @@ export class EditAnnotateModal extends Modal {
 			this.segmentGroupActionsEl,
 		)
 			.setButtonText('Ungroup all')
-			.setWarning()
+			.setDestructive()
 			.onClick(() => this.ungroupAllTextGroups());
 		this.ungroupTextButton = new ButtonComponent(
 			this.segmentGroupActionsEl,
@@ -178,7 +178,7 @@ export class EditAnnotateModal extends Modal {
 		if (this.options.onDelete) {
 			new ButtonComponent(actions)
 				.setButtonText('Delete')
-				.setWarning()
+				.setDestructive()
 				.onClick(() => this.delete());
 		}
 

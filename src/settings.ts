@@ -1,17 +1,13 @@
 import {
 	App,
-	ButtonComponent,
 	Plugin,
 	PluginSettingTab,
 	Setting,
-	TextAreaComponent,
-	ToggleComponent,
+	SettingDefinitionItem,
+	SettingDefinitionList,
 } from 'obsidian';
-import {
-	createFastGroupPreset,
-	FastGroupPreset,
-} from './fast-group';
-import { renderTextGroupAppearanceSettings } from './ui/text-group-appearance-settings';
+import { createFastGroupPreset, FastGroupPreset } from './fast-group';
+import { createTextGroupAppearanceSettingDefinitions } from './ui/text-group-appearance-settings';
 
 const DEFAULT_TEST_TEXT =
 	'This is a test text for debugging in developer mode.这是一段测试文字，用于开发者模式下调试。これは開発者モードでデバッグするためのテスト文章です。이것은 개발자 모드에서 디버깅하기 위한 테스트 텍스트입니다.Ceci est un texte de test pour le débogage en mode développeur.Dies ist ein Testtext zum Debuggen im Entwicklermodus.Este es un texto de prueba para depuración en modo desarrollador.Это тестовый текст для отладки в режиме разработчика.هذا نص اختباري للتصحيح في وضع المطور.';
@@ -36,8 +32,6 @@ interface SettingsPlugin extends Plugin {
 }
 
 export class BetterAnnotateSettingTab extends PluginSettingTab {
-	private expandedFastGroupPresetId: string | null = null;
-
 	constructor(
 		app: App,
 		private readonly plugin: SettingsPlugin,
@@ -45,186 +39,198 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
-	display() {
-		this.containerEl.empty();
-		let addTestTextSetting: Setting | null = null;
-		let testTextSetting: Setting | null = null;
-		let addTestTextToggle: ToggleComponent | null = null;
-		let testTextArea: TextAreaComponent | null = null;
-		let restoreTestTextButton: ButtonComponent | null = null;
-
-		new Setting(this.containerEl)
-			.setName('Dev mode')
-			.setDesc('Enable development-only features.')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.devMode)
-					.onChange(async (value) => {
-						this.plugin.settings.devMode = value;
-						addTestTextToggle?.setDisabled(!value);
-						testTextArea?.setDisabled(!value);
-						restoreTestTextButton?.setDisabled(!value);
-						this.setSettingDisabled(addTestTextSetting, !value);
-						this.setSettingDisabled(testTextSetting, !value);
-						await this.plugin.saveSettings();
-					});
-			});
-
-		addTestTextSetting = new Setting(this.containerEl)
-			.setName('Add test text when creating')
-			.setDesc('Fill the create annotate modal with test text.')
-			.addToggle((toggle) => {
-				addTestTextToggle = toggle;
-				toggle
-					.setValue(this.plugin.settings.addTestTextOnCreate)
-					.setDisabled(!this.plugin.settings.devMode)
-					.onChange(async (value) => {
-						this.plugin.settings.addTestTextOnCreate = value;
-						await this.plugin.saveSettings();
-					});
-			});
-		this.setSettingDisabled(
-			addTestTextSetting,
-			!this.plugin.settings.devMode,
-		);
-
-		testTextSetting = new Setting(this.containerEl)
-			.setName('Test text')
-			.setDesc('Text inserted into the create annotate modal.')
-			.addTextArea((textArea) => {
-				testTextArea = textArea;
-				textArea.inputEl.rows = 6;
-				textArea
-					.setValue(this.plugin.settings.testText)
-					.setDisabled(!this.plugin.settings.devMode)
-					.onChange(async (value) => {
-						this.plugin.settings.testText = value;
-						await this.plugin.saveSettings();
-					});
-			})
-			.addButton((button) => {
-				restoreTestTextButton = button;
-				button
-					.setButtonText('Restore')
-					.setDisabled(!this.plugin.settings.devMode)
-					.onClick(async () => {
-						this.plugin.settings.testText = DEFAULT_TEST_TEXT;
-						testTextArea?.setValue(DEFAULT_TEST_TEXT);
-						await this.plugin.saveSettings();
-					});
-			});
-		this.setSettingDisabled(testTextSetting, !this.plugin.settings.devMode);
-		this.renderFastGroupSettings();
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: 'Dev mode',
+				desc: 'Enable development-only features.',
+				control: {
+					type: 'toggle',
+					key: 'devMode',
+				},
+			},
+			{
+				name: 'Add test text when creating',
+				desc: 'Fill the create annotate modal with test text.',
+				control: {
+					type: 'toggle',
+					key: 'addTestTextOnCreate',
+					disabled: () => !this.plugin.settings.devMode,
+				},
+			},
+			this.createTestTextDefinition(),
+			this.createFastGroupDefinition(),
+		];
 	}
 
-	private renderFastGroupSettings() {
-		new Setting(this.containerEl)
-			.setName('Fast groups')
-			.setDesc('Create reusable text group presets.')
-			.addButton((button) => {
-				button
-					.setButtonText('Add fast group')
-					.setCta()
-					.onClick(async () => {
-						const presets = this.plugin.settings.fastGroupPresets;
-						const preset = createFastGroupPreset(presets.length + 1);
-						presets.push(preset);
-						this.expandedFastGroupPresetId = preset.id;
-						await this.plugin.saveSettings();
-						this.display();
-					});
-			});
+	async setControlValue(key: string, value: unknown) {
+		await super.setControlValue(key, value);
 
-		for (const preset of this.plugin.settings.fastGroupPresets) {
-			this.renderFastGroupPreset(preset);
+		if (key === 'devMode') {
+			this.update();
 		}
 	}
 
-	private renderFastGroupPreset(preset: FastGroupPreset) {
-		const details = this.containerEl.createEl('details', {
-			cls: 'ba-annotate-fast-group-preset',
-		});
-		details.open = preset.id === this.expandedFastGroupPresetId;
-		const summary = details.createEl('summary', {
-			text: preset.title || 'Untitled fast group',
-		});
-		const content = details.createDiv(
-			'ba-annotate-fast-group-preset-content',
-		);
+	private createTestTextDefinition(): SettingDefinitionItem {
+		return {
+			name: 'Test text',
+			desc: 'Text inserted into the create annotate modal.',
+			render: (setting) => {
+				const disabled = !this.plugin.settings.devMode;
+				setting.settingEl.toggleClass(
+					'ba-annotate-setting-disabled',
+					disabled,
+				);
 
-		new Setting(content)
-			.setName('Title')
-			.setDesc('Button text shown beside segments.')
-			.addText((input) => {
-				input
-					.setValue(preset.title)
-					.onChange(async (value) => {
-						preset.title = value;
-						summary.setText(value || 'Untitled fast group');
-						await this.plugin.saveSettings();
+				setting
+					.addTextArea((textArea) => {
+						textArea.inputEl.rows = 6;
+						textArea
+							.setValue(this.plugin.settings.testText)
+							.setDisabled(disabled)
+							.onChange(async (value) => {
+								this.plugin.settings.testText = value;
+								await this.plugin.saveSettings();
+							});
+					})
+					.addButton((button) => {
+						button
+							.setButtonText('Restore')
+							.setDisabled(disabled)
+							.onClick(async () => {
+								this.plugin.settings.testText = DEFAULT_TEST_TEXT;
+								await this.plugin.saveSettings();
+								this.update();
+							});
 					});
-			});
-
-		new Setting(content)
-			.setName('Description')
-			.setDesc('Optional tooltip for the fast group button.')
-			.addText((input) => {
-				input
-					.setValue(preset.description)
-					.onChange(async (value) => {
-						preset.description = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Button color')
-			.addColorPicker((colorPicker) => {
-				colorPicker
-					.setValue(preset.buttonColor)
-					.onChange(async (value) => {
-						preset.buttonColor = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(content)
-			.setName('Button text color')
-			.addColorPicker((colorPicker) => {
-				colorPicker
-					.setValue(preset.buttonTextColor)
-					.onChange(async (value) => {
-						preset.buttonTextColor = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		renderTextGroupAppearanceSettings(content, preset.appearance, {
-			onChange: () => this.plugin.saveSettings(),
-		});
-
-		new Setting(content)
-			.setName('Delete preset')
-			.addButton((button) => {
-				button
-					.setButtonText('Delete')
-					.setWarning()
-					.onClick(async () => {
-						this.expandedFastGroupPresetId = null;
-						this.plugin.settings.fastGroupPresets =
-							this.plugin.settings.fastGroupPresets.filter(
-								(item) => item.id !== preset.id,
-							);
-						await this.plugin.saveSettings();
-						this.display();
-					});
-			});
+			},
+		};
 	}
 
-	private setSettingDisabled(setting: Setting | null, disabled: boolean) {
-		setting?.settingEl.toggleClass(
-			'ba-annotate-setting-disabled',
-			disabled,
-		);
+	private createFastGroupDefinition(): SettingDefinitionList {
+		const presets = this.plugin.settings.fastGroupPresets;
+
+		return {
+			type: 'list',
+			heading: 'Fast groups',
+			emptyState: 'No fast groups.',
+			addItem: {
+				name: 'Add fast group',
+				action: () => {
+					void this.addFastGroupPreset(presets);
+				},
+			},
+			onDelete: (index) => {
+				void this.deleteFastGroupPreset(presets, index);
+			},
+			onReorder: (oldIndex, newIndex) => {
+				void this.reorderFastGroupPresets(
+					presets,
+					oldIndex,
+					newIndex,
+				);
+			},
+			items: presets.map((preset) => ({
+				type: 'page',
+				name: preset.title || 'Untitled fast group',
+				desc: preset.description || 'Configure this Fast Group preset.',
+				items: this.createFastGroupPresetDefinitions(preset),
+			})),
+		};
+	}
+
+	private async addFastGroupPreset(presets: FastGroupPreset[]) {
+		presets.push(createFastGroupPreset(presets.length + 1));
+		await this.plugin.saveSettings();
+		this.update();
+	}
+
+	private async deleteFastGroupPreset(
+		presets: FastGroupPreset[],
+		index: number,
+	) {
+		presets.splice(index, 1);
+		await this.plugin.saveSettings();
+		this.update();
+	}
+
+	private async reorderFastGroupPresets(
+		presets: FastGroupPreset[],
+		oldIndex: number,
+		newIndex: number,
+	) {
+		const [preset] = presets.splice(oldIndex, 1);
+		if (!preset) return;
+
+		presets.splice(newIndex, 0, preset);
+		await this.plugin.saveSettings();
+		this.update();
+	}
+
+	private createFastGroupPresetDefinitions(
+		preset: FastGroupPreset,
+	): SettingDefinitionItem[] {
+		return [
+			{
+				name: 'Title',
+				desc: 'Button text shown beside segments.',
+				render: (setting: Setting) => {
+					setting.addText((input) => {
+						input
+							.setValue(preset.title)
+							.onChange(async (value) => {
+								preset.title = value;
+								await this.plugin.saveSettings();
+							});
+					});
+				},
+			},
+			{
+				name: 'Description',
+				desc: 'Optional tooltip for the Fast Group button.',
+				render: (setting: Setting) => {
+					setting.addText((input) => {
+						input
+							.setValue(preset.description)
+							.onChange(async (value) => {
+								preset.description = value;
+								await this.plugin.saveSettings();
+							});
+					});
+				},
+			},
+			{
+				name: 'Button color',
+				render: (setting: Setting) => {
+					setting.addColorPicker((colorPicker) => {
+						colorPicker
+							.setValue(preset.buttonColor)
+							.onChange(async (value) => {
+								preset.buttonColor = value;
+								await this.plugin.saveSettings();
+							});
+					});
+				},
+			},
+			{
+				name: 'Button text color',
+				render: (setting: Setting) => {
+					setting.addColorPicker((colorPicker) => {
+						colorPicker
+							.setValue(preset.buttonTextColor)
+							.onChange(async (value) => {
+								preset.buttonTextColor = value;
+								await this.plugin.saveSettings();
+							});
+					});
+				},
+			},
+			...createTextGroupAppearanceSettingDefinitions(
+				preset.appearance,
+				{
+					onChange: () => this.plugin.saveSettings(),
+				},
+			),
+		];
 	}
 }
