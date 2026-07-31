@@ -207,24 +207,39 @@ function renderGroupedText(text: string, textGroups: TextGroup[]) {
 		const annotatePosition = group.annotatePosition === 'over'
 			? 'over'
 			: 'under';
-		const styles = [
+		const annotateVisible = group.annotateVisible ?? true;
+		const annotateCompact = group.annotateCompact ?? true;
+		const rubyStyles = [
 			`--ba-text-color: ${textColor}`,
 			`--ba-text-background-color: ${textBackgroundColor ?? 'transparent'}`,
 			`--ba-underline-color: ${underlineColor}`,
 			`--ba-annotate-color: ${annotateColor}`,
+			`ruby-position: ${annotatePosition}`,
+			`ruby-align: ${annotateCompact ? 'center' : 'space-around'}`,
 		].join('; ');
 		const groupText = renderText(text.slice(group.start, group.end));
 		const decoratedText = group.underline
-			? `<u>${groupText}</u>`
+			? `<u style="text-decoration-color: ${underlineColor};">${groupText}</u>`
 			: groupText;
-		const base = `<span class="ba-text-group-base">${decoratedText}</span>`;
+		const baseStyles = [
+			`color: ${textColor}`,
+			`background-color: ${textBackgroundColor ?? 'transparent'}`,
+		].join('; ');
+		const base = `<span class="ba-text-group-base" style="${baseStyles};">${decoratedText}</span>`;
+		const annotateStyles = [
+			`color: ${annotateColor}`,
+			...(annotateVisible ? [] : ['display: none']),
+			...(annotateCompact
+				? ['font-size: 0.55em', 'line-height: 1']
+				: []),
+		].join('; ');
 		const annotate = group.annotate
-			? `<rt>${renderText(group.annotate)}</rt>`
+			? `<rt style="${annotateStyles};">${renderText(group.annotate)}</rt>`
 			: '';
 		const backgroundAttribute = textBackgroundColor
 			? ` ${TEXT_BACKGROUND_COLOR_ATTRIBUTE}="${textBackgroundColor}"`
 			: '';
-		content += `<ruby class="ba-text-group" style="${styles};" ${TEXT_COLOR_ATTRIBUTE}="${textColor}"${backgroundAttribute} ${UNDERLINE_ATTRIBUTE}="${String(group.underline ?? false)}" ${UNDERLINE_COLOR_ATTRIBUTE}="${underlineColor}" ${ANNOTATE_COLOR_ATTRIBUTE}="${annotateColor}" ${ANNOTATE_VISIBLE_ATTRIBUTE}="${String(group.annotateVisible ?? true)}" ${ANNOTATE_POSITION_ATTRIBUTE}="${annotatePosition}" ${ANNOTATE_COMPACT_ATTRIBUTE}="${String(group.annotateCompact ?? true)}">${base}${annotate}</ruby>`;
+		content += `<ruby class="ba-text-group" style="${rubyStyles};" ${TEXT_COLOR_ATTRIBUTE}="${textColor}"${backgroundAttribute} ${UNDERLINE_ATTRIBUTE}="${String(group.underline ?? false)}" ${UNDERLINE_COLOR_ATTRIBUTE}="${underlineColor}" ${ANNOTATE_COLOR_ATTRIBUTE}="${annotateColor}" ${ANNOTATE_VISIBLE_ATTRIBUTE}="${String(annotateVisible)}" ${ANNOTATE_POSITION_ATTRIBUTE}="${annotatePosition}" ${ANNOTATE_COMPACT_ATTRIBUTE}="${String(annotateCompact)}">${base}${annotate}</ruby>`;
 		cursor = group.end;
 	}
 
