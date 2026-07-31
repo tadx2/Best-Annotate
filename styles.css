@@ -94,6 +94,12 @@ div[data-ba-annotate-id] ruby[data-ba-rt-position='under'] {
 	color: var(--text-on-accent);
 }
 
+.ba-annotate-group-settings {
+	box-sizing: border-box;
+	block-size: 13rem;
+	overflow-y: auto;
+}
+
 .ba-annotate-actions {
 	display: flex;
 	align-items: center;
