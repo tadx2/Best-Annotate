@@ -52,11 +52,10 @@ function insertAnnotate(
 	cursor: EditorPosition,
 	text: string,
 ) {
-	const line = editor.getLine(cursor.line);
 	const prefix = cursor.ch > 0 ? '\n\n' : '';
-	const suffix = cursor.ch < line.length ? '\n\n' : '';
 	const block = createAnnotateBlock(crypto.randomUUID(), text);
-	const insertion = `${prefix}${block}${suffix}`;
+	// 在 div 后保留一个空行，并把光标移动过去，以触发 Live Preview 渲染。
+	const insertion = `${prefix}${block}\n\n`;
 
 	editor.replaceRange(insertion, cursor);
 	editor.setCursor(offsetPosition(cursor, insertion));
@@ -76,10 +75,16 @@ function updateAnnotate(editor: Editor, id: string, text: string) {
 
 	const replacement = createAnnotateBlock(id, text);
 	const from = editor.offsetToPos(startOffset);
-	const to = editor.offsetToPos(endOffset + '</div>'.length);
+	const blockEndOffset = endOffset + '</div>'.length;
+	const trailingNewlines = source.slice(blockEndOffset).match(/^\n{0,2}/)?.[0]
+		.length ?? 0;
+	const to = editor.offsetToPos(blockEndOffset + trailingNewlines);
+	const replacementWithNewlines = `${replacement}\n\n`;
 
-	editor.replaceRange(replacement, from, to);
-	editor.setCursor(editor.offsetToPos(startOffset + replacement.length));
+	editor.replaceRange(replacementWithNewlines, from, to);
+	editor.setCursor(
+		editor.offsetToPos(startOffset + replacementWithNewlines.length),
+	);
 	editor.focus();
 }
 
