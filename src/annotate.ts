@@ -1,4 +1,5 @@
 import { Editor, EditorPosition, MarkdownView, Notice, Plugin } from 'obsidian';
+import { BetterAnnotateSettings } from './settings';
 import { TextGroup } from './text-segmentation';
 import { EditAnnotateModal } from './ui/annotate-modal';
 import { CreateAnnotateModal } from './ui/create-annotate-modal';
@@ -12,10 +13,11 @@ const ANNOTATE_COLOR_ATTRIBUTE = 'data-ba-annotate-color';
 const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
 const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
 const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
-const DEVELOPMENT_TEST_TEXT =
-	'这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作。';
 
-export function registerAnnotateMenu(plugin: Plugin) {
+export function registerAnnotateMenu(
+	plugin: Plugin,
+	settings: BetterAnnotateSettings,
+) {
 	plugin.registerEvent(
 		plugin.app.workspace.on('editor-menu', (menu, editor) => {
 			const cursor = editor.getCursor();
@@ -25,7 +27,10 @@ export function registerAnnotateMenu(plugin: Plugin) {
 					.setIcon('message-square-plus')
 					.onClick(() => {
 						new CreateAnnotateModal(plugin.app, {
-							initialText: DEVELOPMENT_TEST_TEXT,
+							initialText: settings.devMode &&
+								settings.addTestTextOnCreate
+								? settings.testText
+								: '',
 							onSave: (text) => {
 								const id = insertAnnotate(editor, cursor, text, []);
 								openEditAnnotateModal(

@@ -2,7 +2,7 @@
 	"id": "better-annotate",
 	"name": "Better Annotate",
 	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
+	"minAppVersion": "1.2.3",
 	"description": "A better way to annotate your notes.",
 	"author": "Obsidian",
 	"authorUrl": "https://obsidian.md",
