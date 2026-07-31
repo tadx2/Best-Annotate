@@ -16,6 +16,22 @@
 	block-size: 32rem;
 }
 
+.ba-annotate-group-creation {
+	display: flex;
+	align-content: flex-start;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+	padding-top: var(--size-4-3);
+}
+
+.ba-annotate-selected-text-group {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-block-size: 0;
+}
+
 .ba-annotate-final-preview-section {
 	grid-column: 1 / -1;
 }
@@ -57,6 +73,10 @@
 	justify-content: flex-end;
 	flex-wrap: wrap;
 	gap: var(--size-2-2);
+}
+
+.ba-annotate-is-hidden {
+	display: none;
 }
 
 .ba-annotate-ungroup-button:not(:disabled),
