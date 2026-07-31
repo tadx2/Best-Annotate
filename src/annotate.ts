@@ -3,6 +3,9 @@ import { TextGroup } from './text-segmentation';
 import { AnnotateModal } from './ui/annotate-modal';
 
 const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
+const TEXT_GROUP_COLOR_ATTRIBUTE = 'data-ba-group-color';
+const TEXT_GROUP_UNDERLINE_ATTRIBUTE = 'data-ba-group-underline';
+const TEXT_GROUP_RT_POSITION_ATTRIBUTE = 'data-ba-rt-position';
 const DEVELOPMENT_TEST_TEXT =
 	'这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作。';
 
@@ -152,7 +155,20 @@ function renderGroupedText(text: string, textGroups: TextGroup[]) {
 		if (group.start < cursor) continue;
 
 		content += renderText(text.slice(cursor, group.start));
-		content += `<ruby>${renderText(text.slice(group.start, group.end))}</ruby>`;
+		const color = normalizeTextGroupColor(group.color);
+		const colorAttribute = color
+			? ` ${TEXT_GROUP_COLOR_ATTRIBUTE}="${color}"`
+			: '';
+		const underlineAttribute = group.underline
+			? ` ${TEXT_GROUP_UNDERLINE_ATTRIBUTE}="true"`
+			: '';
+		const groupText = renderText(text.slice(group.start, group.end));
+		const base = group.underline && color
+			? `<u style="text-decoration-color: ${color};">${groupText}</u>`
+			: groupText;
+		const rt = group.rt ? `<rt>${renderText(group.rt)}</rt>` : '';
+		const rtPosition = group.rtPosition === 'under' ? 'under' : 'over';
+		content += `<ruby${colorAttribute}${underlineAttribute} ${TEXT_GROUP_RT_POSITION_ATTRIBUTE}="${rtPosition}">${base}${rt}</ruby>`;
 		cursor = group.end;
 	}
 
@@ -161,6 +177,10 @@ function renderGroupedText(text: string, textGroups: TextGroup[]) {
 
 function renderText(text: string) {
 	return escapeHtml(text).replace(/\r?\n/g, '<br>');
+}
+
+function normalizeTextGroupColor(color: string | undefined) {
+	return /^#[0-9a-f]{6}$/i.test(color ?? '') ? color : undefined;
 }
 
 function extractAnnotateContent(annotate: HTMLElement) {
@@ -181,8 +201,27 @@ function extractAnnotateContent(annotate: HTMLElement) {
 
 		if (node.tagName === 'RUBY') {
 			const start = text.length;
+			const rt = Array.from(node.children).find(
+				(child) => child.tagName === 'RT',
+			)?.textContent ?? '';
 			node.childNodes.forEach(visit);
-			if (text.length > start) textGroups.push({ start, end: text.length });
+			if (text.length > start) {
+				textGroups.push({
+					start,
+					end: text.length,
+					color:
+						node.getAttribute(TEXT_GROUP_COLOR_ATTRIBUTE) ?? undefined,
+					underline:
+						node.getAttribute(TEXT_GROUP_UNDERLINE_ATTRIBUTE) ===
+							'true' || node.querySelector('u') !== null,
+					rt,
+					rtPosition:
+						node.getAttribute(TEXT_GROUP_RT_POSITION_ATTRIBUTE) ===
+							'under'
+							? 'under'
+							: 'over',
+				});
+			}
 			return;
 		}
 

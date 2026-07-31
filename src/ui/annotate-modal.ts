@@ -3,6 +3,7 @@ import {
 	ButtonComponent,
 	Modal,
 	Notice,
+	Setting,
 	TextAreaComponent,
 } from 'obsidian';
 import {
@@ -10,6 +11,18 @@ import {
 	TextGroup,
 	TextSegment,
 } from '../text-segmentation';
+
+const TEXT_GROUP_COLORS = [
+	'#e57373',
+	'#ba68c8',
+	'#7986cb',
+	'#4fc3f7',
+	'#4db6ac',
+	'#81c784',
+	'#ffb74d',
+	'#f06292',
+];
+const RT_POSITION_ATTRIBUTE = 'data-ba-rt-position';
 
 export interface AnnotateModalOptions {
 	initialText?: string;
@@ -26,9 +39,11 @@ export class AnnotateModal extends Modal {
 	private segments: TextSegment[] = [];
 	private segmentsEl!: HTMLElement;
 	private textGroupsEl!: HTMLElement;
+	private groupSettingsEl!: HTMLElement;
 	private createTextGroupButton!: ButtonComponent;
 	private activePointerId: number | null = null;
 	private dragShouldSelect = true;
+	private selectedTextGroupIndex: number | null = null;
 
 	constructor(
 		app: App,
@@ -36,7 +51,16 @@ export class AnnotateModal extends Modal {
 	) {
 		super(app);
 		this.text = options.initialText ?? '';
-		this.textGroups = [...(options.initialTextGroups ?? [])];
+		this.textGroups = [];
+		for (const group of options.initialTextGroups ?? []) {
+			this.textGroups.push({
+				...group,
+				color: this.normalizeTextGroupColor(group.color),
+				underline: group.underline ?? false,
+				rt: group.rt ?? '',
+				rtPosition: group.rtPosition === 'under' ? 'under' : 'over',
+			});
+		}
 	}
 
 	onOpen() {
@@ -53,8 +77,10 @@ export class AnnotateModal extends Modal {
 				this.text = value;
 				this.selectedIndices.clear();
 				this.textGroups = [];
+				this.selectedTextGroupIndex = null;
 				this.renderSegments();
 				this.renderTextGroups();
+				this.renderGroupSettings();
 			});
 
 		textArea.inputEl.rows = 5;
@@ -92,9 +118,17 @@ export class AnnotateModal extends Modal {
 		this.textGroupsEl = this.contentEl.createDiv(
 			'ba-annotate-text-groups',
 		);
+		this.contentEl.createDiv({
+			cls: 'ba-annotate-section-label',
+			text: 'Group settings',
+		});
+		this.groupSettingsEl = this.contentEl.createDiv(
+			'ba-annotate-group-settings',
+		);
 
 		this.renderSegments();
 		this.renderTextGroups();
+		this.renderGroupSettings();
 
 		const actions = this.contentEl.createDiv('ba-annotate-actions');
 		if (this.options.onDelete) {
@@ -146,14 +180,101 @@ export class AnnotateModal extends Modal {
 	private renderTextGroups() {
 		this.textGroupsEl.empty();
 
-		this.textGroups.forEach((group) => {
-			const groupEl = this.textGroupsEl.createDiv(
-				'ba-annotate-text-group',
+		this.textGroups.forEach((group, index) => {
+			const groupEl = this.textGroupsEl.createEl('button', {
+				cls: 'ba-annotate-text-group',
+			});
+			groupEl.type = 'button';
+			groupEl.setCssProps({ '--ba-text-group-color': group.color ?? '' });
+			groupEl.toggleClass(
+				'is-active',
+				index === this.selectedTextGroupIndex,
 			);
-			groupEl.createEl('ruby', {
-				text: this.text.slice(group.start, group.end),
+			groupEl.toggleClass('is-underlined', group.underline ?? false);
+			groupEl.setAttribute(
+				'aria-pressed',
+				String(index === this.selectedTextGroupIndex),
+			);
+			const ruby = groupEl.createEl('ruby');
+			ruby.setAttribute(
+				RT_POSITION_ATTRIBUTE,
+				group.rtPosition ?? 'over',
+			);
+			const groupText = this.text.slice(group.start, group.end);
+			if (group.underline) {
+				ruby.createEl('u', { text: groupText });
+			} else {
+				ruby.appendText(groupText);
+			}
+			if (group.rt) ruby.createEl('rt', { text: group.rt });
+			groupEl.addEventListener('click', () => {
+				this.selectTextGroup(index);
 			});
 		});
+	}
+
+	private renderGroupSettings() {
+		this.groupSettingsEl.empty();
+		const selectedIndex = this.selectedTextGroupIndex;
+		const group = selectedIndex === null
+			? undefined
+			: this.textGroups[selectedIndex];
+
+		if (!group) {
+			this.groupSettingsEl.createDiv({
+				cls: 'setting-item-description',
+				text: 'Select a text group to configure it.',
+			});
+			return;
+		}
+
+		new Setting(this.groupSettingsEl)
+			.setName('Color')
+			.addColorPicker((colorPicker) => {
+				colorPicker
+					.setValue(group.color ?? TEXT_GROUP_COLORS[0]!)
+					.onChange((value) => {
+						group.color = value;
+						this.renderSegments();
+						this.renderTextGroups();
+					});
+			});
+
+		new Setting(this.groupSettingsEl)
+			.setName('Underline')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(group.underline ?? false)
+					.onChange((value) => {
+						group.underline = value;
+						this.renderTextGroups();
+					});
+			});
+
+		new Setting(this.groupSettingsEl)
+			.setName('RT')
+			.addText((input) => {
+				input
+					.setPlaceholder('Enter ruby text')
+					.setValue(group.rt ?? '')
+					.onChange((value) => {
+						group.rt = value;
+						this.renderTextGroups();
+					});
+			});
+
+		new Setting(this.groupSettingsEl)
+			.setName('Annotation position')
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption('over', 'Above')
+					.addOption('under', 'Below')
+					.setValue(group.rtPosition ?? 'over')
+					.onChange((value) => {
+						group.rtPosition = value === 'under' ? 'under' : 'over';
+						this.renderTextGroups();
+					});
+			});
 	}
 
 	private createTextGroups() {
@@ -176,8 +297,10 @@ export class AnnotateModal extends Modal {
 
 		this.textGroups.sort((a, b) => a.start - b.start);
 		this.selectedIndices.clear();
+		this.selectedTextGroupIndex = null;
 		this.renderSegments();
 		this.renderTextGroups();
+		this.renderGroupSettings();
 	}
 
 	private addTextGroup(firstIndex: number, lastIndex: number) {
@@ -185,14 +308,28 @@ export class AnnotateModal extends Modal {
 		const last = this.segments[lastIndex];
 		if (!first || !last) return;
 
-		this.textGroups.push({ start: first.start, end: last.end });
+		this.textGroups.push({
+			start: first.start,
+			end: last.end,
+			color: this.createRandomGroupColor(),
+			underline: false,
+			rt: '',
+			rtPosition: 'over',
+		});
 	}
 
 	private startSegmentDrag(event: PointerEvent) {
 		if (event.button !== 0) return;
 
 		const segment = this.getSegmentFromElement(event.target);
-		if (!segment || this.isSegmentGrouped(segment.index)) return;
+		if (!segment) return;
+
+		const groupIndex = this.getTextGroupIndex(segment.index);
+		if (groupIndex !== -1) {
+			event.preventDefault();
+			this.selectTextGroup(groupIndex);
+			return;
+		}
 
 		event.preventDefault();
 		this.activePointerId = event.pointerId;
@@ -243,7 +380,11 @@ export class AnnotateModal extends Modal {
 	}
 
 	private toggleSegment(button: HTMLButtonElement, index: number) {
-		if (this.isSegmentGrouped(index)) return;
+		const groupIndex = this.getTextGroupIndex(index);
+		if (groupIndex !== -1) {
+			this.selectTextGroup(groupIndex);
+			return;
+		}
 
 		if (this.selectedIndices.has(index)) {
 			this.selectedIndices.delete(index);
@@ -267,12 +408,23 @@ export class AnnotateModal extends Modal {
 	}
 
 	private updateSegmentButton(button: HTMLButtonElement, index: number) {
-		const isGrouped = this.isSegmentGrouped(index);
+		const groupIndex = this.getTextGroupIndex(index);
+		const group = this.textGroups[groupIndex];
+		const isGrouped = groupIndex !== -1;
 		const isSelected = this.selectedIndices.has(index);
-		button.disabled = isGrouped;
+		button.setCssProps({ '--ba-text-group-color': group?.color ?? '' });
 		button.toggleClass('is-grouped', isGrouped);
 		button.toggleClass('is-selected', isSelected);
-		button.setAttribute('aria-pressed', String(isSelected));
+		button.toggleClass(
+			'is-active-text-group',
+			groupIndex === this.selectedTextGroupIndex,
+		);
+		button.setAttribute(
+			'aria-pressed',
+			String(
+				isSelected || groupIndex === this.selectedTextGroupIndex,
+			),
+		);
 	}
 
 	private updateCreateTextGroupButton() {
@@ -281,12 +433,43 @@ export class AnnotateModal extends Modal {
 	}
 
 	private isSegmentGrouped(index: number) {
-		const segment = this.segments[index];
-		if (!segment) return false;
+		return this.getTextGroupIndex(index) !== -1;
+	}
 
-		return this.textGroups.some(
+	private getTextGroupIndex(index: number) {
+		const segment = this.segments[index];
+		if (!segment) return -1;
+
+		return this.textGroups.findIndex(
 			(group) => segment.start >= group.start && segment.end <= group.end,
 		);
+	}
+
+	private selectTextGroup(index: number) {
+		this.selectedTextGroupIndex =
+			this.selectedTextGroupIndex === index ? null : index;
+		this.renderSegments();
+		this.renderTextGroups();
+		this.renderGroupSettings();
+	}
+
+	private createRandomGroupColor() {
+		const usedColors = new Set(this.textGroups.map((group) => group.color));
+		const availableColors = TEXT_GROUP_COLORS.filter(
+			(color) => !usedColors.has(color),
+		);
+		const colors = availableColors.length > 0
+			? availableColors
+			: TEXT_GROUP_COLORS;
+		const randomValue = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0;
+
+		return colors[randomValue % colors.length] ?? TEXT_GROUP_COLORS[0]!;
+	}
+
+	private normalizeTextGroupColor(color: string | undefined) {
+		return /^#[0-9a-f]{6}$/i.test(color ?? '')
+			? color!
+			: this.createRandomGroupColor();
 	}
 
 	private save() {

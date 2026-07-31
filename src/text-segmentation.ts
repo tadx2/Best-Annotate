@@ -7,6 +7,10 @@ export interface TextSegment {
 export interface TextGroup {
 	start: number;
 	end: number;
+	color?: string;
+	underline?: boolean;
+	rt?: string;
+	rtPosition?: 'over' | 'under';
 }
 
 const SEGMENT_PATTERN =

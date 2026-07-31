@@ -45,8 +45,21 @@
 }
 
 .ba-annotate-segment.is-grouped {
-	cursor: not-allowed;
-	opacity: 0.5;
+	border-color: var(--ba-text-group-color);
+	color: var(--ba-text-group-color);
+	cursor: pointer;
+	opacity: 0.75;
+}
+
+.ba-annotate-segment.is-active-text-group {
+	background-color: color-mix(
+		in srgb,
+		var(--ba-text-group-color) 20%,
+		transparent
+	);
+	border-color: var(--ba-text-group-color);
+	color: var(--ba-text-group-color);
+	opacity: 1;
 }
 
 .ba-annotate-text-groups {
@@ -58,9 +71,33 @@
 
 .ba-annotate-text-group {
 	padding: var(--size-2-1) var(--size-4-2);
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--ba-text-group-color);
 	border-radius: var(--radius-s);
 	background-color: var(--background-secondary);
+	color: var(--ba-text-group-color);
+}
+
+.ba-annotate-text-group u {
+	text-decoration-color: var(--ba-text-group-color);
+}
+
+.ba-annotate-text-group ruby[data-ba-rt-position='over'],
+div[data-ba-annotate-id] ruby[data-ba-rt-position='over'] {
+	ruby-position: over;
+}
+
+.ba-annotate-text-group ruby[data-ba-rt-position='under'],
+div[data-ba-annotate-id] ruby[data-ba-rt-position='under'] {
+	ruby-position: under;
+}
+
+.ba-annotate-text-group.is-active {
+	background-color: color-mix(
+		in srgb,
+		var(--ba-text-group-color) 20%,
+		transparent
+	);
+	color: var(--ba-text-group-color);
 }
 
 .ba-annotate-actions {
