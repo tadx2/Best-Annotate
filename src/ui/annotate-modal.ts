@@ -1,4 +1,10 @@
-import { App, Modal, Notice, Setting } from 'obsidian';
+import {
+	App,
+	Modal,
+	Notice,
+	Setting,
+	TextAreaComponent,
+} from 'obsidian';
 
 export class AnnotateModal extends Modal {
 	private text: string;
@@ -15,19 +21,17 @@ export class AnnotateModal extends Modal {
 	onOpen() {
 		this.setTitle(this.text ? 'Edit annotate' : 'Add annotate');
 
-		new Setting(this.contentEl)
-			.setName('Text')
-			.addTextArea((textArea) => {
-				textArea
-					.setPlaceholder('Enter annotate text')
-					.setValue(this.text)
-					.onChange((value) => {
-						this.text = value;
-					});
-
-				textArea.inputEl.rows = 5;
-				textArea.inputEl.focus();
+		this.contentEl.createDiv({ text: 'Text' });
+		const textArea = new TextAreaComponent(this.contentEl)
+			.setPlaceholder('Enter annotate text')
+			.setValue(this.text)
+			.onChange((value) => {
+				this.text = value;
 			});
+
+		textArea.inputEl.rows = 5;
+		textArea.inputEl.addClass('ba-annotate-textarea');
+		textArea.inputEl.focus();
 
 		new Setting(this.contentEl)
 			.addButton((button) => {

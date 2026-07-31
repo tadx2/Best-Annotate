@@ -1,1 +1,5 @@
-
+.ba-annotate-textarea {
+	box-sizing: border-box;
+	width: 100%;
+	resize: none;
+}
