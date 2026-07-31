@@ -52,6 +52,11 @@
 	margin: 0;
 }
 
+.ba-annotate-section-actions {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
 .ba-annotate-segments {
 	display: flex;
 	flex: 1;
