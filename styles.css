@@ -39,6 +39,13 @@
 	touch-action: none;
 }
 
+.ba-annotate-segment-group-row {
+	display: flex;
+	flex-basis: 100%;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+}
+
 .ba-annotate-segment.is-selected {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
@@ -59,39 +66,12 @@
 	opacity: 1;
 }
 
-.ba-annotate-text-groups {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--size-2-2);
-	min-height: var(--input-height);
-}
-
-.ba-annotate-text-group {
-	padding: var(--size-2-1) var(--size-4-2);
-	border: 1px solid var(--ba-text-group-color);
-	border-radius: var(--radius-s);
-	background-color: var(--background-secondary);
-	color: var(--ba-text-group-color);
-}
-
-.ba-annotate-text-group u {
-	text-decoration-color: var(--ba-text-group-color);
-}
-
-.ba-annotate-text-group ruby[data-ba-rt-position='over'],
 div[data-ba-annotate-id] ruby[data-ba-rt-position='over'] {
 	ruby-position: over;
 }
 
-.ba-annotate-text-group ruby[data-ba-rt-position='under'],
 div[data-ba-annotate-id] ruby[data-ba-rt-position='under'] {
 	ruby-position: under;
-}
-
-.ba-annotate-text-group.is-active {
-	background-color: var(--interactive-accent);
-	border-color: var(--interactive-accent);
-	color: var(--text-on-accent);
 }
 
 .ba-annotate-group-settings {

@@ -22,7 +22,6 @@ const TEXT_GROUP_COLORS = [
 	'#ffb74d',
 	'#f06292',
 ];
-const RT_POSITION_ATTRIBUTE = 'data-ba-rt-position';
 
 export interface AnnotateModalOptions {
 	initialText?: string;
@@ -38,7 +37,6 @@ export class AnnotateModal extends Modal {
 	private textGroups: TextGroup[];
 	private segments: TextSegment[] = [];
 	private segmentsEl!: HTMLElement;
-	private textGroupsEl!: HTMLElement;
 	private groupSettingsEl!: HTMLElement;
 	private createTextGroupButton!: ButtonComponent;
 	private activePointerId: number | null = null;
@@ -79,7 +77,6 @@ export class AnnotateModal extends Modal {
 				this.textGroups = [];
 				this.selectedTextGroupIndex = null;
 				this.renderSegments();
-				this.renderTextGroups();
 				this.renderGroupSettings();
 			});
 
@@ -113,13 +110,6 @@ export class AnnotateModal extends Modal {
 
 		this.contentEl.createDiv({
 			cls: 'ba-annotate-section-label',
-			text: 'Text Group',
-		});
-		this.textGroupsEl = this.contentEl.createDiv(
-			'ba-annotate-text-groups',
-		);
-		this.contentEl.createDiv({
-			cls: 'ba-annotate-section-label',
 			text: 'Group settings',
 		});
 		this.groupSettingsEl = this.contentEl.createDiv(
@@ -127,7 +117,6 @@ export class AnnotateModal extends Modal {
 		);
 
 		this.renderSegments();
-		this.renderTextGroups();
 		this.renderGroupSettings();
 
 		const actions = this.contentEl.createDiv('ba-annotate-actions');
@@ -159,9 +148,22 @@ export class AnnotateModal extends Modal {
 	private renderSegments() {
 		this.segmentsEl.empty();
 		this.segments = segmentText(this.text);
+		let currentGroupIndex = -1;
+		let groupRow: HTMLElement | null = null;
 
 		this.segments.forEach((segment, index) => {
-			const button = this.segmentsEl.createEl('button', {
+			const groupIndex = this.getTextGroupIndex(index);
+			if (groupIndex !== currentGroupIndex) {
+				currentGroupIndex = groupIndex;
+				groupRow = groupIndex === -1
+					? null
+					: this.segmentsEl.createDiv(
+						'ba-annotate-segment-group-row',
+					);
+			}
+
+			const container = groupRow ?? this.segmentsEl;
+			const button = container.createEl('button', {
 				cls: 'ba-annotate-segment',
 				text: segment.text,
 			});
@@ -175,42 +177,6 @@ export class AnnotateModal extends Modal {
 		});
 
 		this.updateCreateTextGroupButton();
-	}
-
-	private renderTextGroups() {
-		this.textGroupsEl.empty();
-
-		this.textGroups.forEach((group, index) => {
-			const groupEl = this.textGroupsEl.createEl('button', {
-				cls: 'ba-annotate-text-group',
-			});
-			groupEl.type = 'button';
-			groupEl.setCssProps({ '--ba-text-group-color': group.color ?? '' });
-			groupEl.toggleClass(
-				'is-active',
-				index === this.selectedTextGroupIndex,
-			);
-			groupEl.toggleClass('is-underlined', group.underline ?? false);
-			groupEl.setAttribute(
-				'aria-pressed',
-				String(index === this.selectedTextGroupIndex),
-			);
-			const ruby = groupEl.createEl('ruby');
-			ruby.setAttribute(
-				RT_POSITION_ATTRIBUTE,
-				group.rtPosition ?? 'over',
-			);
-			const groupText = this.text.slice(group.start, group.end);
-			if (group.underline) {
-				ruby.createEl('u', { text: groupText });
-			} else {
-				ruby.appendText(groupText);
-			}
-			if (group.rt) ruby.createEl('rt', { text: group.rt });
-			groupEl.addEventListener('click', () => {
-				this.selectTextGroup(index);
-			});
-		});
 	}
 
 	private renderGroupSettings() {
@@ -235,8 +201,6 @@ export class AnnotateModal extends Modal {
 					.setValue(group.color ?? TEXT_GROUP_COLORS[0]!)
 					.onChange((value) => {
 						group.color = value;
-						this.renderSegments();
-						this.renderTextGroups();
 					});
 			});
 
@@ -247,7 +211,6 @@ export class AnnotateModal extends Modal {
 					.setValue(group.underline ?? false)
 					.onChange((value) => {
 						group.underline = value;
-						this.renderTextGroups();
 					});
 			});
 
@@ -259,7 +222,6 @@ export class AnnotateModal extends Modal {
 					.setValue(group.rt ?? '')
 					.onChange((value) => {
 						group.rt = value;
-						this.renderTextGroups();
 					});
 			});
 
@@ -272,7 +234,6 @@ export class AnnotateModal extends Modal {
 					.setValue(group.rtPosition ?? 'over')
 					.onChange((value) => {
 						group.rtPosition = value === 'under' ? 'under' : 'over';
-						this.renderTextGroups();
 					});
 			});
 	}
@@ -299,7 +260,6 @@ export class AnnotateModal extends Modal {
 		this.selectedIndices.clear();
 		this.selectedTextGroupIndex = null;
 		this.renderSegments();
-		this.renderTextGroups();
 		this.renderGroupSettings();
 	}
 
@@ -452,7 +412,6 @@ export class AnnotateModal extends Modal {
 		this.selectedTextGroupIndex =
 			this.selectedTextGroupIndex === index ? null : index;
 		this.renderSegments();
-		this.renderTextGroups();
 		this.renderGroupSettings();
 	}
 
@@ -468,7 +427,6 @@ export class AnnotateModal extends Modal {
 					this.updateSegmentButton(button, index);
 				}
 			});
-		this.renderTextGroups();
 		this.renderGroupSettings();
 	}
 
