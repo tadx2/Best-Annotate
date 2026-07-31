@@ -4,27 +4,27 @@ import {
 	Modal,
 	Notice,
 	Setting,
-	TextAreaComponent,
 } from 'obsidian';
 import {
 	segmentText,
 	TextGroup,
 	TextSegment,
 } from '../text-segmentation';
+import { CreateAnnotateModal } from './create-annotate-modal';
 
 const DEFAULT_COLOR = '#000000';
 const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
 const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
 const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
 
-export interface AnnotateModalOptions {
+export interface EditAnnotateModalOptions {
 	initialText?: string;
 	initialTextGroups?: TextGroup[];
 	onSave: (text: string, textGroups: TextGroup[]) => void;
 	onDelete?: () => void;
 }
 
-export class AnnotateModal extends Modal {
+export class EditAnnotateModal extends Modal {
 	private text: string;
 	private readonly selectedIndices = new Set<number>();
 	private readonly draggedIndices = new Set<number>();
@@ -41,7 +41,7 @@ export class AnnotateModal extends Modal {
 
 	constructor(
 		app: App,
-		private readonly options: AnnotateModalOptions,
+		private readonly options: EditAnnotateModalOptions,
 	) {
 		super(app);
 		this.text = options.initialText ?? '';
@@ -77,20 +77,26 @@ export class AnnotateModal extends Modal {
 	}
 
 	onOpen() {
-		this.setTitle(this.options.onDelete ? 'Edit annotate' : 'Add annotate');
+		this.setTitle('Edit annotate');
 		this.modalEl.addClass('ba-annotate-modal');
 		const layout = this.contentEl.createDiv('ba-annotate-layout');
 		const finalPreviewSection = layout.createDiv(
 			'ba-annotate-final-preview-section',
 		);
-		finalPreviewSection.createDiv({
+		const finalPreviewHeader = finalPreviewSection.createDiv(
+			'ba-annotate-section-header',
+		);
+		finalPreviewHeader.createDiv({
 			cls: 'ba-annotate-section-label',
 			text: 'Final preview',
 		});
+		new ButtonComponent(finalPreviewHeader)
+			.setButtonText('Modify text')
+			.onClick(() => this.modifyText());
 		this.finalPreviewEl = finalPreviewSection.createDiv(
 			'ba-annotate-final-preview',
 		);
-		const textColumn = layout.createDiv('ba-annotate-column');
+		const segmentsColumn = layout.createDiv('ba-annotate-column');
 		const groupColumn = layout.createDiv('ba-annotate-column');
 
 		groupColumn.createDiv({
@@ -109,27 +115,7 @@ export class AnnotateModal extends Modal {
 			'ba-annotate-group-settings',
 		);
 
-		textColumn.createDiv({
-			cls: 'ba-annotate-section-label',
-			text: 'Text',
-		});
-		const textArea = new TextAreaComponent(textColumn)
-			.setPlaceholder('Enter annotate text')
-			.setValue(this.text)
-			.onChange((value) => {
-				this.text = value;
-				this.selectedIndices.clear();
-				this.textGroups = [];
-				this.selectedTextGroupIndex = null;
-				this.renderSegments();
-				this.renderSelectedTextGroup();
-				this.renderFinalPreview();
-			});
-
-		textArea.inputEl.rows = 5;
-		textArea.inputEl.addClass('ba-annotate-textarea');
-
-		const segmentsHeader = textColumn.createDiv(
+		const segmentsHeader = segmentsColumn.createDiv(
 			'ba-annotate-section-header',
 		);
 		segmentsHeader.createDiv({
@@ -140,7 +126,7 @@ export class AnnotateModal extends Modal {
 			.setButtonText('Create text group')
 			.onClick(() => this.createTextGroups());
 
-		this.segmentsEl = textColumn.createDiv('ba-annotate-segments');
+		this.segmentsEl = segmentsColumn.createDiv('ba-annotate-segments');
 		this.segmentsEl.addEventListener('pointerdown', (event) => {
 			this.startSegmentDrag(event);
 		});
@@ -176,8 +162,6 @@ export class AnnotateModal extends Modal {
 			.setButtonText('Save')
 			.setCta()
 			.onClick(() => this.save());
-
-		textArea.inputEl.focus();
 	}
 
 	onClose() {
@@ -216,6 +200,23 @@ export class AnnotateModal extends Modal {
 		});
 
 		this.updateCreateTextGroupButton();
+	}
+
+	private modifyText() {
+		new Notice('Modifying the text will delete all existing groups.');
+		new CreateAnnotateModal(this.app, {
+			initialText: this.text,
+			onSave: (text) => {
+				this.text = text;
+				this.selectedIndices.clear();
+				this.textGroups = [];
+				this.selectedTextGroupIndex = null;
+				this.renderSegments();
+				this.renderSelectedTextGroup();
+				this.renderFinalPreview();
+				new Notice('All text groups were deleted.');
+			},
+		}).open();
 	}
 
 	private renderSelectedTextGroup() {

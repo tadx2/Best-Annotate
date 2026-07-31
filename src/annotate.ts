@@ -1,6 +1,7 @@
 import { Editor, EditorPosition, MarkdownView, Notice, Plugin } from 'obsidian';
 import { TextGroup } from './text-segmentation';
-import { AnnotateModal } from './ui/annotate-modal';
+import { EditAnnotateModal } from './ui/annotate-modal';
+import { CreateAnnotateModal } from './ui/create-annotate-modal';
 
 const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
 const TEXT_COLOR_ATTRIBUTE = 'data-ba-text-color';
@@ -23,10 +24,17 @@ export function registerAnnotateMenu(plugin: Plugin) {
 				item.setTitle('Add annotate')
 					.setIcon('message-square-plus')
 					.onClick(() => {
-						new AnnotateModal(plugin.app, {
+						new CreateAnnotateModal(plugin.app, {
 							initialText: DEVELOPMENT_TEST_TEXT,
-							onSave: (text, textGroups) => {
-								insertAnnotate(editor, cursor, text, textGroups);
+							onSave: (text) => {
+								const id = insertAnnotate(editor, cursor, text, []);
+								openEditAnnotateModal(
+									plugin,
+									editor,
+									id,
+									text,
+									[],
+								);
 							},
 						}).open();
 					});
@@ -48,15 +56,31 @@ export function registerAnnotateMenu(plugin: Plugin) {
 		if (!id || !view) return;
 		const content = extractAnnotateContent(annotate);
 
-		new AnnotateModal(plugin.app, {
-			initialText: content.text,
-			initialTextGroups: content.textGroups,
-			onSave: (text, textGroups) => {
-				updateAnnotate(view.editor, id, text, textGroups);
-			},
-			onDelete: () => deleteAnnotate(view.editor, id),
-		}).open();
+		openEditAnnotateModal(
+			plugin,
+			view.editor,
+			id,
+			content.text,
+			content.textGroups,
+		);
 	});
+}
+
+function openEditAnnotateModal(
+	plugin: Plugin,
+	editor: Editor,
+	id: string,
+	text: string,
+	textGroups: TextGroup[],
+) {
+	new EditAnnotateModal(plugin.app, {
+		initialText: text,
+		initialTextGroups: textGroups,
+		onSave: (updatedText, updatedTextGroups) => {
+			updateAnnotate(editor, id, updatedText, updatedTextGroups);
+		},
+		onDelete: () => deleteAnnotate(editor, id),
+	}).open();
 }
 
 function insertAnnotate(
@@ -66,13 +90,15 @@ function insertAnnotate(
 	textGroups: TextGroup[],
 ) {
 	const prefix = cursor.ch > 0 ? '\n\n' : '';
-	const block = createAnnotateBlock(crypto.randomUUID(), text, textGroups);
+	const id = crypto.randomUUID();
+	const block = createAnnotateBlock(id, text, textGroups);
 	// 在 div 后保留一个空行，并把光标移动过去，以触发 Live Preview 渲染。
 	const insertion = `${prefix}${block}\n\n`;
 
 	editor.replaceRange(insertion, cursor);
 	editor.setCursor(offsetPosition(cursor, insertion));
 	editor.focus();
+	return id;
 }
 
 function deleteAnnotate(editor: Editor, id: string) {
