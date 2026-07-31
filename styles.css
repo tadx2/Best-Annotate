@@ -1,5 +1,17 @@
 .ba-annotate-textarea {
 	box-sizing: border-box;
-	width: 100%;
 	resize: none;
+	width: 100%;
+}
+
+.ba-annotate-actions {
+	display: flex;
+	align-items: center;
+	margin-top: var(--size-4-4);
+}
+
+.ba-annotate-primary-actions {
+	display: flex;
+	gap: var(--size-2-2);
+	margin-inline-start: auto;
 }

@@ -1,13 +1,9 @@
-import {
-	Editor,
-	EditorPosition,
-	MarkdownView,
-	Notice,
-	Plugin,
-} from 'obsidian';
+import { Editor, EditorPosition, MarkdownView, Notice, Plugin } from 'obsidian';
 import { AnnotateModal } from './ui/annotate-modal';
 
 const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
+const DEVELOPMENT_TEST_TEXT =
+	'这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作。';
 
 export function registerAnnotateMenu(plugin: Plugin) {
 	plugin.registerEvent(
@@ -18,9 +14,11 @@ export function registerAnnotateMenu(plugin: Plugin) {
 				item.setTitle('Add annotate')
 					.setIcon('message-square-plus')
 					.onClick(() => {
-						new AnnotateModal(plugin.app, (text) => {
-							insertAnnotate(editor, cursor, text);
-						}).open();
+						new AnnotateModal(
+							plugin.app,
+							(text) => insertAnnotate(editor, cursor, text),
+							DEVELOPMENT_TEST_TEXT,
+						).open();
 					});
 			});
 		}),
@@ -48,11 +46,7 @@ export function registerAnnotateMenu(plugin: Plugin) {
 	});
 }
 
-function insertAnnotate(
-	editor: Editor,
-	cursor: EditorPosition,
-	text: string,
-) {
+function insertAnnotate(editor: Editor, cursor: EditorPosition, text: string) {
 	const prefix = cursor.ch > 0 ? '\n\n' : '';
 	const block = createAnnotateBlock(crypto.randomUUID(), text);
 	// 在 div 后保留一个空行，并把光标移动过去，以触发 Live Preview 渲染。
@@ -104,16 +98,13 @@ function updateAnnotate(editor: Editor, id: string, text: string) {
 function findAnnotateRange(source: string, id: string) {
 	const openingTag = `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">`;
 	const start = source.indexOf(openingTag);
-	const closingTagStart = source.indexOf(
-		'</div>',
-		start + openingTag.length,
-	);
+	const closingTagStart = source.indexOf('</div>', start + openingTag.length);
 
 	if (start === -1 || closingTagStart === -1) return null;
 
 	const blockEnd = closingTagStart + '</div>'.length;
-	const trailingNewlines = source.slice(blockEnd).match(/^\n{0,2}/)?.[0]
-		.length ?? 0;
+	const trailingNewlines =
+		source.slice(blockEnd).match(/^\n{0,2}/)?.[0].length ?? 0;
 
 	return { start, end: blockEnd + trailingNewlines };
 }

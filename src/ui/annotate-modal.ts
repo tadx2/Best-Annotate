@@ -1,8 +1,8 @@
 import {
 	App,
+	ButtonComponent,
 	Modal,
 	Notice,
-	Setting,
 	TextAreaComponent,
 } from 'obsidian';
 
@@ -20,7 +20,7 @@ export class AnnotateModal extends Modal {
 	}
 
 	onOpen() {
-		this.setTitle(this.text ? 'Edit annotate' : 'Add annotate');
+		this.setTitle(this.onDelete ? 'Edit annotate' : 'Add annotate');
 
 		this.contentEl.createDiv({ text: 'Text' });
 		const textArea = new TextAreaComponent(this.contentEl)
@@ -34,26 +34,24 @@ export class AnnotateModal extends Modal {
 		textArea.inputEl.addClass('ba-annotate-textarea');
 		textArea.inputEl.focus();
 
-		const actions = new Setting(this.contentEl);
+		const actions = this.contentEl.createDiv('ba-annotate-actions');
 		if (this.onDelete) {
-			actions.addButton((button) => {
-				button
-					.setButtonText('Delete')
-					.setWarning()
-					.onClick(() => this.delete());
-			});
+			new ButtonComponent(actions)
+				.setButtonText('Delete')
+				.setWarning()
+				.onClick(() => this.delete());
 		}
 
-		actions
-			.addButton((button) => {
-				button.setButtonText('Cancel').onClick(() => this.close());
-			})
-			.addButton((button) => {
-				button
-					.setButtonText('Save')
-					.setCta()
-					.onClick(() => this.save());
-			});
+		const primaryActions = actions.createDiv(
+			'ba-annotate-primary-actions',
+		);
+		new ButtonComponent(primaryActions)
+			.setButtonText('Cancel')
+			.onClick(() => this.close());
+		new ButtonComponent(primaryActions)
+			.setButtonText('Save')
+			.setCta()
+			.onClick(() => this.save());
 	}
 
 	onClose() {
