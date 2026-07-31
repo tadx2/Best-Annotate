@@ -10,8 +10,10 @@
 }
 
 .ba-annotate-column {
+	display: flex;
+	flex-direction: column;
 	min-width: 0;
-	min-block-size: 32rem;
+	block-size: 32rem;
 }
 
 .ba-annotate-final-preview-section {
@@ -52,10 +54,13 @@
 
 .ba-annotate-segments {
 	display: flex;
+	flex: 1;
+	align-content: flex-start;
+	align-items: flex-start;
 	flex-wrap: wrap;
 	box-sizing: border-box;
 	gap: var(--size-2-2);
-	block-size: 20rem;
+	min-block-size: 0;
 	overflow-y: auto;
 	padding: var(--size-4-2);
 	border: 1px solid var(--background-modifier-border);
@@ -64,7 +69,10 @@
 }
 
 .ba-annotate-segment {
-	height: auto;
+	display: inline-flex;
+	align-items: center;
+	box-sizing: border-box;
+	block-size: var(--input-height);
 	padding: var(--size-2-1) var(--size-4-2);
 	touch-action: none;
 }
@@ -148,8 +156,9 @@
 }
 
 .ba-annotate-group-settings {
+	flex: 1;
 	box-sizing: border-box;
-	block-size: 18rem;
+	min-block-size: 0;
 	overflow-y: auto;
 }
 
