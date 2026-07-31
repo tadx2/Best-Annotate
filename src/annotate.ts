@@ -1,5 +1,13 @@
-import { Editor, EditorPosition, Plugin } from 'obsidian';
+import {
+	Editor,
+	EditorPosition,
+	MarkdownView,
+	Notice,
+	Plugin,
+} from 'obsidian';
 import { AnnotateModal } from './ui/annotate-modal';
+
+const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
 
 export function registerAnnotateMenu(plugin: Plugin) {
 	plugin.registerEvent(
@@ -17,6 +25,26 @@ export function registerAnnotateMenu(plugin: Plugin) {
 			});
 		}),
 	);
+
+	plugin.registerDomEvent(document, 'click', (event) => {
+		const target = event.target;
+		if (!(target instanceof HTMLElement)) return;
+
+		const annotate = target.closest<HTMLElement>(
+			`div[${ANNOTATE_ID_ATTRIBUTE}]`,
+		);
+		if (!annotate) return;
+
+		const id = annotate.getAttribute(ANNOTATE_ID_ATTRIBUTE);
+		const view = plugin.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!id || !view) return;
+
+		new AnnotateModal(
+			plugin.app,
+			(text) => updateAnnotate(view.editor, id, text),
+			annotate.innerText,
+		).open();
+	});
 }
 
 function insertAnnotate(
@@ -27,13 +55,37 @@ function insertAnnotate(
 	const line = editor.getLine(cursor.line);
 	const prefix = cursor.ch > 0 ? '\n\n' : '';
 	const suffix = cursor.ch < line.length ? '\n\n' : '';
-	const content = escapeHtml(text).replace(/\r?\n/g, '<br>');
-	const block = `<div>${content}</div>`;
+	const block = createAnnotateBlock(crypto.randomUUID(), text);
 	const insertion = `${prefix}${block}${suffix}`;
 
 	editor.replaceRange(insertion, cursor);
 	editor.setCursor(offsetPosition(cursor, insertion));
 	editor.focus();
+}
+
+function updateAnnotate(editor: Editor, id: string, text: string) {
+	const source = editor.getValue();
+	const openingTag = `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">`;
+	const startOffset = source.indexOf(openingTag);
+	const endOffset = source.indexOf('</div>', startOffset + openingTag.length);
+
+	if (startOffset === -1 || endOffset === -1) {
+		new Notice('Could not find this annotate.');
+		return;
+	}
+
+	const replacement = createAnnotateBlock(id, text);
+	const from = editor.offsetToPos(startOffset);
+	const to = editor.offsetToPos(endOffset + '</div>'.length);
+
+	editor.replaceRange(replacement, from, to);
+	editor.setCursor(editor.offsetToPos(startOffset + replacement.length));
+	editor.focus();
+}
+
+function createAnnotateBlock(id: string, text: string) {
+	const content = escapeHtml(text).replace(/\r?\n/g, '<br>');
+	return `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">${content}</div>`;
 }
 
 function escapeHtml(text: string) {

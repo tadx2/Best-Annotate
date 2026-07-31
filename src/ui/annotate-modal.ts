@@ -1,23 +1,26 @@
 import { App, Modal, Notice, Setting } from 'obsidian';
 
 export class AnnotateModal extends Modal {
-	private text = '';
+	private text: string;
 
 	constructor(
 		app: App,
 		private readonly onSave: (text: string) => void,
+		initialText = '',
 	) {
 		super(app);
+		this.text = initialText;
 	}
 
 	onOpen() {
-		this.setTitle('Add annotate');
+		this.setTitle(this.text ? 'Edit annotate' : 'Add annotate');
 
 		new Setting(this.contentEl)
 			.setName('Text')
 			.addTextArea((textArea) => {
 				textArea
 					.setPlaceholder('Enter annotate text')
+					.setValue(this.text)
 					.onChange((value) => {
 						this.text = value;
 					});
