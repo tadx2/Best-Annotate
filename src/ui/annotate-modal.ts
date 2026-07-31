@@ -39,6 +39,7 @@ export class EditAnnotateModal extends Modal {
 	private clearTextGroupStyleButton!: ButtonComponent;
 	private clearTextGroupAllButton!: ButtonComponent;
 	private activePointerId: number | null = null;
+	private dragStartIndex: number | null = null;
 	private dragShouldSelect = true;
 	private selectedTextGroupIndex: number | null = null;
 
@@ -612,9 +613,10 @@ export class EditAnnotateModal extends Modal {
 		event.preventDefault();
 		this.clearSelectedTextGroup();
 		this.activePointerId = event.pointerId;
+		this.dragStartIndex = segment.index;
 		this.dragShouldSelect = !this.selectedIndices.has(segment.index);
 		this.draggedIndices.clear();
-		this.applyDragSelection(segment.button, segment.index);
+		this.applyDragRangeSelection(segment.index);
 		this.segmentsEl.setPointerCapture(event.pointerId);
 	}
 
@@ -631,7 +633,7 @@ export class EditAnnotateModal extends Modal {
 			segment &&
 			!this.isSegmentGrouped(segment.index)
 		) {
-			this.applyDragSelection(segment.button, segment.index);
+			this.applyDragRangeSelection(segment.index);
 		}
 	}
 
@@ -642,11 +644,29 @@ export class EditAnnotateModal extends Modal {
 			this.segmentsEl.releasePointerCapture(pointerId);
 		}
 		this.activePointerId = null;
+		this.dragStartIndex = null;
 		this.draggedIndices.clear();
 	}
 
-	private applyDragSelection(button: HTMLButtonElement, index: number) {
+	private applyDragRangeSelection(endIndex: number) {
+		const startIndex = this.dragStartIndex;
+		if (startIndex === null) return;
+
+		const firstIndex = Math.min(startIndex, endIndex);
+		const lastIndex = Math.max(startIndex, endIndex);
+		for (let index = firstIndex; index <= lastIndex; index++) {
+			this.applyDragSelection(index);
+		}
+		this.updateSegmentActionButtons();
+	}
+
+	private applyDragSelection(index: number) {
 		if (this.draggedIndices.has(index) || this.isSegmentGrouped(index)) return;
+
+		const button = this.segmentsEl.querySelector<HTMLButtonElement>(
+			`[data-segment-index="${index}"]`,
+		);
+		if (!button) return;
 
 		this.draggedIndices.add(index);
 		if (this.dragShouldSelect) {
@@ -655,7 +675,6 @@ export class EditAnnotateModal extends Modal {
 			this.selectedIndices.delete(index);
 		}
 		this.updateSegmentButton(button, index);
-		this.updateSegmentActionButtons();
 	}
 
 	private toggleSegment(button: HTMLButtonElement, index: number) {
