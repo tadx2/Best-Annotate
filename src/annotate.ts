@@ -14,11 +14,12 @@ export function registerAnnotateMenu(plugin: Plugin) {
 				item.setTitle('Add annotate')
 					.setIcon('message-square-plus')
 					.onClick(() => {
-						new AnnotateModal(
-							plugin.app,
-							(text) => insertAnnotate(editor, cursor, text),
-							DEVELOPMENT_TEST_TEXT,
-						).open();
+						new AnnotateModal(plugin.app, {
+							initialText: DEVELOPMENT_TEST_TEXT,
+							onSave: (text) => {
+								insertAnnotate(editor, cursor, text);
+							},
+						}).open();
 					});
 			});
 		}),
@@ -37,12 +38,13 @@ export function registerAnnotateMenu(plugin: Plugin) {
 		const view = plugin.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!id || !view) return;
 
-		new AnnotateModal(
-			plugin.app,
-			(text) => updateAnnotate(view.editor, id, text),
-			annotate.innerText,
-			() => deleteAnnotate(view.editor, id),
-		).open();
+		new AnnotateModal(plugin.app, {
+			initialText: annotate.innerText,
+			onSave: (text) => {
+				updateAnnotate(view.editor, id, text);
+			},
+			onDelete: () => deleteAnnotate(view.editor, id),
+		}).open();
 	});
 }
 
@@ -96,9 +98,12 @@ function updateAnnotate(editor: Editor, id: string, text: string) {
 }
 
 function findAnnotateRange(source: string, id: string) {
-	const openingTag = `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">`;
-	const start = source.indexOf(openingTag);
-	const closingTagStart = source.indexOf('</div>', start + openingTag.length);
+	const openingTagStart = `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}"`;
+	const start = source.indexOf(openingTagStart);
+	const closingTagStart = source.indexOf(
+		'</div>',
+		start + openingTagStart.length,
+	);
 
 	if (start === -1 || closingTagStart === -1) return null;
 

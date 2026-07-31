@@ -4,6 +4,35 @@
 	width: 100%;
 }
 
+.ba-annotate-section-label {
+	font-weight: var(--font-semibold);
+	margin: var(--size-4-3) 0 var(--size-4-2);
+}
+
+.ba-annotate-segments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+	max-height: 16rem;
+	min-height: var(--input-height);
+	overflow-y: auto;
+	padding: var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--input-radius);
+	user-select: none;
+}
+
+.ba-annotate-segment {
+	height: auto;
+	padding: var(--size-2-1) var(--size-4-2);
+	touch-action: none;
+}
+
+.ba-annotate-segment.is-selected {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
 .ba-annotate-actions {
 	display: flex;
 	align-items: center;
