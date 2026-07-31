@@ -59,6 +59,7 @@ export class AnnotateModal extends Modal {
 				rtPosition: group.rtPosition === 'under' ? 'under' : 'over',
 			});
 		}
+		if (this.textGroups.length > 0) this.selectedTextGroupIndex = 0;
 	}
 
 	onOpen() {
@@ -246,19 +247,24 @@ export class AnnotateModal extends Modal {
 
 		let groupStart = selected[0]!;
 		let previous = selected[0]!;
+		const createdGroups: TextGroup[] = [];
 
 		for (const index of selected.slice(1)) {
 			if (index !== previous + 1) {
-				this.addTextGroup(groupStart, previous);
+				const group = this.addTextGroup(groupStart, previous);
+				if (group) createdGroups.push(group);
 				groupStart = index;
 			}
 			previous = index;
 		}
-		this.addTextGroup(groupStart, previous);
+		const group = this.addTextGroup(groupStart, previous);
+		if (group) createdGroups.push(group);
 
 		this.textGroups.sort((a, b) => a.start - b.start);
 		this.selectedIndices.clear();
-		this.selectedTextGroupIndex = null;
+		this.selectedTextGroupIndex = createdGroups[0]
+			? this.textGroups.indexOf(createdGroups[0])
+			: null;
 		this.renderSegments();
 		this.renderGroupSettings();
 	}
@@ -266,16 +272,18 @@ export class AnnotateModal extends Modal {
 	private addTextGroup(firstIndex: number, lastIndex: number) {
 		const first = this.segments[firstIndex];
 		const last = this.segments[lastIndex];
-		if (!first || !last) return;
+		if (!first || !last) return null;
 
-		this.textGroups.push({
+		const group: TextGroup = {
 			start: first.start,
 			end: last.end,
 			color: this.createRandomGroupColor(),
 			underline: false,
 			rt: '',
 			rtPosition: 'over',
-		});
+		};
+		this.textGroups.push(group);
+		return group;
 	}
 
 	private startSegmentDrag(event: PointerEvent) {
