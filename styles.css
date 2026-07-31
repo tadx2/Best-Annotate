@@ -9,6 +9,17 @@
 	margin: var(--size-4-3) 0 var(--size-4-2);
 }
 
+.ba-annotate-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: var(--size-4-3);
+}
+
+.ba-annotate-section-header .ba-annotate-section-label {
+	margin: 0;
+}
+
 .ba-annotate-segments {
 	display: flex;
 	flex-wrap: wrap;
@@ -31,6 +42,25 @@
 .ba-annotate-segment.is-selected {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
+}
+
+.ba-annotate-segment.is-grouped {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.ba-annotate-text-groups {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+	min-height: var(--input-height);
+}
+
+.ba-annotate-text-group {
+	padding: var(--size-2-1) var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background-color: var(--background-secondary);
 }
 
 .ba-annotate-actions {

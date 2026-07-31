@@ -1,4 +1,5 @@
 import { Editor, EditorPosition, MarkdownView, Notice, Plugin } from 'obsidian';
+import { TextGroup } from './text-segmentation';
 import { AnnotateModal } from './ui/annotate-modal';
 
 const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
@@ -16,8 +17,8 @@ export function registerAnnotateMenu(plugin: Plugin) {
 					.onClick(() => {
 						new AnnotateModal(plugin.app, {
 							initialText: DEVELOPMENT_TEST_TEXT,
-							onSave: (text) => {
-								insertAnnotate(editor, cursor, text);
+							onSave: (text, textGroups) => {
+								insertAnnotate(editor, cursor, text, textGroups);
 							},
 						}).open();
 					});
@@ -37,20 +38,27 @@ export function registerAnnotateMenu(plugin: Plugin) {
 		const id = annotate.getAttribute(ANNOTATE_ID_ATTRIBUTE);
 		const view = plugin.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!id || !view) return;
+		const content = extractAnnotateContent(annotate);
 
 		new AnnotateModal(plugin.app, {
-			initialText: annotate.innerText,
-			onSave: (text) => {
-				updateAnnotate(view.editor, id, text);
+			initialText: content.text,
+			initialTextGroups: content.textGroups,
+			onSave: (text, textGroups) => {
+				updateAnnotate(view.editor, id, text, textGroups);
 			},
 			onDelete: () => deleteAnnotate(view.editor, id),
 		}).open();
 	});
 }
 
-function insertAnnotate(editor: Editor, cursor: EditorPosition, text: string) {
+function insertAnnotate(
+	editor: Editor,
+	cursor: EditorPosition,
+	text: string,
+	textGroups: TextGroup[],
+) {
 	const prefix = cursor.ch > 0 ? '\n\n' : '';
-	const block = createAnnotateBlock(crypto.randomUUID(), text);
+	const block = createAnnotateBlock(crypto.randomUUID(), text, textGroups);
 	// 在 div 后保留一个空行，并把光标移动过去，以触发 Live Preview 渲染。
 	const insertion = `${prefix}${block}\n\n`;
 
@@ -76,7 +84,12 @@ function deleteAnnotate(editor: Editor, id: string) {
 	editor.focus();
 }
 
-function updateAnnotate(editor: Editor, id: string, text: string) {
+function updateAnnotate(
+	editor: Editor,
+	id: string,
+	text: string,
+	textGroups: TextGroup[],
+) {
 	const source = editor.getValue();
 	const range = findAnnotateRange(source, id);
 
@@ -85,7 +98,7 @@ function updateAnnotate(editor: Editor, id: string, text: string) {
 		return;
 	}
 
-	const replacement = createAnnotateBlock(id, text);
+	const replacement = createAnnotateBlock(id, text, textGroups);
 	const from = editor.offsetToPos(range.start);
 	const to = editor.offsetToPos(range.end);
 	const replacementWithNewlines = `${replacement}\n\n`;
@@ -114,9 +127,70 @@ function findAnnotateRange(source: string, id: string) {
 	return { start, end: blockEnd + trailingNewlines };
 }
 
-function createAnnotateBlock(id: string, text: string) {
-	const content = escapeHtml(text).replace(/\r?\n/g, '<br>');
+function createAnnotateBlock(
+	id: string,
+	text: string,
+	textGroups: TextGroup[],
+) {
+	const content = renderGroupedText(text, textGroups);
 	return `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">${content}</div>`;
+}
+
+function renderGroupedText(text: string, textGroups: TextGroup[]) {
+	const groups = textGroups
+		.filter(
+			(group) =>
+				group.start >= 0 &&
+				group.end > group.start &&
+				group.end <= text.length,
+		)
+		.sort((a, b) => a.start - b.start);
+	let content = '';
+	let cursor = 0;
+
+	for (const group of groups) {
+		if (group.start < cursor) continue;
+
+		content += renderText(text.slice(cursor, group.start));
+		content += `<ruby>${renderText(text.slice(group.start, group.end))}</ruby>`;
+		cursor = group.end;
+	}
+
+	return content + renderText(text.slice(cursor));
+}
+
+function renderText(text: string) {
+	return escapeHtml(text).replace(/\r?\n/g, '<br>');
+}
+
+function extractAnnotateContent(annotate: HTMLElement) {
+	let text = '';
+	const textGroups: TextGroup[] = [];
+
+	const visit = (node: Node) => {
+		if (node.nodeType === Node.TEXT_NODE) {
+			text += node.textContent ?? '';
+			return;
+		}
+		if (!node.instanceOf(HTMLElement)) return;
+		if (node.tagName === 'BR') {
+			text += '\n';
+			return;
+		}
+		if (node.tagName === 'RT' || node.tagName === 'RP') return;
+
+		if (node.tagName === 'RUBY') {
+			const start = text.length;
+			node.childNodes.forEach(visit);
+			if (text.length > start) textGroups.push({ start, end: text.length });
+			return;
+		}
+
+		node.childNodes.forEach(visit);
+	};
+
+	annotate.childNodes.forEach(visit);
+	return { text, textGroups };
 }
 
 function escapeHtml(text: string) {
