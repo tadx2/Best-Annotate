@@ -11,6 +11,7 @@
 
 .ba-annotate-column {
 	min-width: 0;
+	min-block-size: 32rem;
 }
 
 .ba-annotate-final-preview-section {
@@ -19,8 +20,7 @@
 
 .ba-annotate-final-preview {
 	box-sizing: border-box;
-	min-height: 6rem;
-	max-height: 12rem;
+	block-size: 9rem;
 	overflow: auto;
 	padding: var(--size-4-3);
 	border: 1px solid var(--background-modifier-border);
@@ -53,9 +53,9 @@
 .ba-annotate-segments {
 	display: flex;
 	flex-wrap: wrap;
+	box-sizing: border-box;
 	gap: var(--size-2-2);
-	max-height: 16rem;
-	min-height: var(--input-height);
+	block-size: 20rem;
 	overflow-y: auto;
 	padding: var(--size-4-2);
 	border: 1px solid var(--background-modifier-border);
@@ -101,7 +101,7 @@
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
-	block-size: 8rem;
+	block-size: 10rem;
 	overflow: auto;
 	padding: var(--size-4-3);
 	border: 1px solid var(--background-modifier-border);
@@ -149,7 +149,7 @@
 
 .ba-annotate-group-settings {
 	box-sizing: border-box;
-	block-size: 13rem;
+	block-size: 18rem;
 	overflow-y: auto;
 }
 
