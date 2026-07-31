@@ -36,6 +36,7 @@ export class EditAnnotateModal extends Modal {
 	private finalPreviewEl!: HTMLElement;
 	private groupTextButton!: ButtonComponent;
 	private ungroupTextButton!: ButtonComponent;
+	private ungroupAllTextButton!: ButtonComponent;
 	private clearTextGroupStyleButton!: ButtonComponent;
 	private clearTextGroupAllButton!: ButtonComponent;
 	private activePointerId: number | null = null;
@@ -145,6 +146,10 @@ export class EditAnnotateModal extends Modal {
 		const segmentActions = segmentsHeader.createDiv(
 			'ba-annotate-section-actions',
 		);
+		this.ungroupAllTextButton = new ButtonComponent(segmentActions)
+			.setButtonText('Ungroup all')
+			.setWarning()
+			.onClick(() => this.ungroupAllTextGroups());
 		this.ungroupTextButton = new ButtonComponent(segmentActions)
 			.setButtonText('Ungroup')
 			.onClick(() => this.ungroupTextGroup());
@@ -560,6 +565,17 @@ export class EditAnnotateModal extends Modal {
 		this.renderFinalPreview();
 	}
 
+	private ungroupAllTextGroups() {
+		if (this.textGroups.length === 0) return;
+
+		this.textGroups = [];
+		this.selectedIndices.clear();
+		this.selectedTextGroupIndex = null;
+		this.renderSegments();
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
+	}
+
 	private clearTextGroupStyles() {
 		const group = this.getSelectedTextGroup();
 		if (!group) return;
@@ -601,7 +617,11 @@ export class EditAnnotateModal extends Modal {
 		if (event.button !== 0) return;
 
 		const segment = this.getSegmentFromElement(event.target);
-		if (!segment) return;
+		if (!segment) {
+			event.preventDefault();
+			this.clearSegmentSelection();
+			return;
+		}
 
 		const groupIndex = this.getTextGroupIndex(segment.index);
 		if (groupIndex !== -1) {
@@ -729,6 +749,8 @@ export class EditAnnotateModal extends Modal {
 			this.selectedIndices.size === 0;
 		const hasSelectedTextGroup = this.selectedTextGroupIndex !== null;
 		this.ungroupTextButton.buttonEl.disabled = !hasSelectedTextGroup;
+		this.ungroupAllTextButton.buttonEl.disabled =
+			this.textGroups.length === 0;
 		this.clearTextGroupStyleButton.buttonEl.disabled =
 			!hasSelectedTextGroup;
 		this.clearTextGroupAllButton.buttonEl.disabled =
@@ -769,6 +791,20 @@ export class EditAnnotateModal extends Modal {
 					this.updateSegmentButton(button, index);
 				}
 			});
+		this.renderSelectedTextGroup();
+	}
+
+	private clearSegmentSelection() {
+		if (
+			this.selectedIndices.size === 0 &&
+			this.selectedTextGroupIndex === null
+		) {
+			return;
+		}
+
+		this.selectedIndices.clear();
+		this.selectedTextGroupIndex = null;
+		this.renderSegments();
 		this.renderSelectedTextGroup();
 	}
 
