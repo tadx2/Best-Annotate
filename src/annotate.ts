@@ -3,9 +3,14 @@ import { TextGroup } from './text-segmentation';
 import { AnnotateModal } from './ui/annotate-modal';
 
 const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
-const TEXT_GROUP_COLOR_ATTRIBUTE = 'data-ba-group-color';
-const TEXT_GROUP_UNDERLINE_ATTRIBUTE = 'data-ba-group-underline';
-const TEXT_GROUP_RT_POSITION_ATTRIBUTE = 'data-ba-rt-position';
+const TEXT_COLOR_ATTRIBUTE = 'data-ba-text-color';
+const TEXT_BACKGROUND_COLOR_ATTRIBUTE = 'data-ba-text-background-color';
+const UNDERLINE_ATTRIBUTE = 'data-ba-underline';
+const UNDERLINE_COLOR_ATTRIBUTE = 'data-ba-underline-color';
+const ANNOTATE_COLOR_ATTRIBUTE = 'data-ba-annotate-color';
+const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
+const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
+const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
 const DEVELOPMENT_TEST_TEXT =
 	'这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作,这是用于开发阶段测试标注功能默认文字内容方便快速检查弹窗输入保存编辑删除以及页面渲染是否能够正常工作。';
 
@@ -155,20 +160,36 @@ function renderGroupedText(text: string, textGroups: TextGroup[]) {
 		if (group.start < cursor) continue;
 
 		content += renderText(text.slice(cursor, group.start));
-		const color = normalizeTextGroupColor(group.color);
-		const colorAttribute = color
-			? ` ${TEXT_GROUP_COLOR_ATTRIBUTE}="${color}"`
-			: '';
-		const underlineAttribute = group.underline
-			? ` ${TEXT_GROUP_UNDERLINE_ATTRIBUTE}="true"`
-			: '';
+		const textColor = normalizeColor(group.textColor, '#000000');
+		const textBackgroundColor = normalizeOptionalColor(
+			group.textBackgroundColor,
+		);
+		const underlineColor = normalizeColor(
+			group.underlineColor,
+			textColor,
+		);
+		const annotateColor = normalizeColor(group.annotateColor, '#000000');
+		const annotatePosition = group.annotatePosition === 'over'
+			? 'over'
+			: 'under';
+		const styles = [
+			`--ba-text-color: ${textColor}`,
+			`--ba-text-background-color: ${textBackgroundColor ?? 'transparent'}`,
+			`--ba-underline-color: ${underlineColor}`,
+			`--ba-annotate-color: ${annotateColor}`,
+		].join('; ');
 		const groupText = renderText(text.slice(group.start, group.end));
-		const base = group.underline && color
-			? `<u style="text-decoration-color: ${color};">${groupText}</u>`
+		const decoratedText = group.underline
+			? `<u>${groupText}</u>`
 			: groupText;
-		const rt = group.rt ? `<rt>${renderText(group.rt)}</rt>` : '';
-		const rtPosition = group.rtPosition === 'under' ? 'under' : 'over';
-		content += `<ruby${colorAttribute}${underlineAttribute} ${TEXT_GROUP_RT_POSITION_ATTRIBUTE}="${rtPosition}">${base}${rt}</ruby>`;
+		const base = `<span class="ba-text-group-base">${decoratedText}</span>`;
+		const annotate = group.annotate
+			? `<rt>${renderText(group.annotate)}</rt>`
+			: '';
+		const backgroundAttribute = textBackgroundColor
+			? ` ${TEXT_BACKGROUND_COLOR_ATTRIBUTE}="${textBackgroundColor}"`
+			: '';
+		content += `<ruby class="ba-text-group" style="${styles};" ${TEXT_COLOR_ATTRIBUTE}="${textColor}"${backgroundAttribute} ${UNDERLINE_ATTRIBUTE}="${String(group.underline ?? false)}" ${UNDERLINE_COLOR_ATTRIBUTE}="${underlineColor}" ${ANNOTATE_COLOR_ATTRIBUTE}="${annotateColor}" ${ANNOTATE_VISIBLE_ATTRIBUTE}="${String(group.annotateVisible ?? true)}" ${ANNOTATE_POSITION_ATTRIBUTE}="${annotatePosition}" ${ANNOTATE_COMPACT_ATTRIBUTE}="${String(group.annotateCompact ?? true)}">${base}${annotate}</ruby>`;
 		cursor = group.end;
 	}
 
@@ -179,7 +200,11 @@ function renderText(text: string) {
 	return escapeHtml(text).replace(/\r?\n/g, '<br>');
 }
 
-function normalizeTextGroupColor(color: string | undefined) {
+function normalizeColor(color: string | undefined, fallback: string) {
+	return /^#[0-9a-f]{6}$/i.test(color ?? '') ? color! : fallback;
+}
+
+function normalizeOptionalColor(color: string | undefined) {
 	return /^#[0-9a-f]{6}$/i.test(color ?? '') ? color : undefined;
 }
 
@@ -201,7 +226,7 @@ function extractAnnotateContent(annotate: HTMLElement) {
 
 		if (node.tagName === 'RUBY') {
 			const start = text.length;
-			const rt = Array.from(node.children).find(
+			const annotateText = Array.from(node.children).find(
 				(child) => child.tagName === 'RT',
 			)?.textContent ?? '';
 			node.childNodes.forEach(visit);
@@ -209,17 +234,27 @@ function extractAnnotateContent(annotate: HTMLElement) {
 				textGroups.push({
 					start,
 					end: text.length,
-					color:
-						node.getAttribute(TEXT_GROUP_COLOR_ATTRIBUTE) ?? undefined,
+					textColor:
+						node.getAttribute(TEXT_COLOR_ATTRIBUTE) ?? undefined,
+					textBackgroundColor:
+						node.getAttribute(TEXT_BACKGROUND_COLOR_ATTRIBUTE) ??
+						undefined,
 					underline:
-						node.getAttribute(TEXT_GROUP_UNDERLINE_ATTRIBUTE) ===
-							'true' || node.querySelector('u') !== null,
-					rt,
-					rtPosition:
-						node.getAttribute(TEXT_GROUP_RT_POSITION_ATTRIBUTE) ===
-							'under'
-							? 'under'
-							: 'over',
+						node.getAttribute(UNDERLINE_ATTRIBUTE) === 'true' ||
+						node.querySelector('u') !== null,
+					underlineColor:
+						node.getAttribute(UNDERLINE_COLOR_ATTRIBUTE) ?? undefined,
+					annotate: annotateText,
+					annotateColor:
+						node.getAttribute(ANNOTATE_COLOR_ATTRIBUTE) ?? undefined,
+					annotateVisible:
+						node.getAttribute(ANNOTATE_VISIBLE_ATTRIBUTE) !== 'false',
+					annotatePosition:
+						node.getAttribute(ANNOTATE_POSITION_ATTRIBUTE) === 'over'
+							? 'over'
+							: 'under',
+					annotateCompact:
+						node.getAttribute(ANNOTATE_COMPACT_ATTRIBUTE) !== 'false',
 				});
 			}
 			return;

@@ -12,17 +12,10 @@ import {
 	TextSegment,
 } from '../text-segmentation';
 
-const TEXT_GROUP_COLORS = [
-	'#e57373',
-	'#ba68c8',
-	'#7986cb',
-	'#4fc3f7',
-	'#4db6ac',
-	'#81c784',
-	'#ffb74d',
-	'#f06292',
-];
-const RT_POSITION_ATTRIBUTE = 'data-ba-rt-position';
+const DEFAULT_COLOR = '#000000';
+const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
+const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
+const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
 
 export interface AnnotateModalOptions {
 	initialText?: string;
@@ -54,12 +47,30 @@ export class AnnotateModal extends Modal {
 		this.text = options.initialText ?? '';
 		this.textGroups = [];
 		for (const group of options.initialTextGroups ?? []) {
+			const textColor = this.normalizeColor(
+				group.textColor,
+				DEFAULT_COLOR,
+			);
 			this.textGroups.push({
 				...group,
-				color: this.normalizeTextGroupColor(group.color),
+				textColor,
+				textBackgroundColor: this.normalizeOptionalColor(
+					group.textBackgroundColor,
+				),
 				underline: group.underline ?? false,
-				rt: group.rt ?? '',
-				rtPosition: group.rtPosition === 'under' ? 'under' : 'over',
+				underlineColor: this.normalizeColor(
+					group.underlineColor,
+					textColor,
+				),
+				annotate: group.annotate ?? '',
+				annotateColor: this.normalizeColor(
+					group.annotateColor,
+					DEFAULT_COLOR,
+				),
+				annotateVisible: group.annotateVisible ?? true,
+				annotatePosition:
+					group.annotatePosition === 'over' ? 'over' : 'under',
+				annotateCompact: group.annotateCompact ?? true,
 			});
 		}
 		if (this.textGroups.length > 0) this.selectedTextGroupIndex = 0;
@@ -212,6 +223,11 @@ export class AnnotateModal extends Modal {
 		this.renderGroupSettings();
 	}
 
+	private refreshPreviews() {
+		this.renderTextGroupPreview();
+		this.renderFinalPreview();
+	}
+
 	private renderTextGroupPreview() {
 		this.textGroupPreviewEl.empty();
 		const selectedIndex = this.selectedTextGroupIndex;
@@ -268,19 +284,34 @@ export class AnnotateModal extends Modal {
 		group: TextGroup,
 		text: string,
 	) {
-		const ruby = container.createEl('ruby');
-		ruby.setCssProps({ '--ba-text-group-color': group.color ?? '' });
+		const ruby = container.createEl('ruby', { cls: 'ba-text-group' });
+		ruby.setCssProps({
+			'--ba-text-color': group.textColor ?? '',
+			'--ba-text-background-color':
+				group.textBackgroundColor ?? 'transparent',
+			'--ba-underline-color': group.underlineColor ?? '',
+			'--ba-annotate-color': group.annotateColor ?? '',
+		});
 		ruby.setAttribute(
-			RT_POSITION_ATTRIBUTE,
-			group.rtPosition ?? 'over',
+			ANNOTATE_POSITION_ATTRIBUTE,
+			group.annotatePosition ?? 'under',
 		);
+		ruby.setAttribute(
+			ANNOTATE_VISIBLE_ATTRIBUTE,
+			String(group.annotateVisible ?? true),
+		);
+		ruby.setAttribute(
+			ANNOTATE_COMPACT_ATTRIBUTE,
+			String(group.annotateCompact ?? true),
+		);
+		const base = ruby.createSpan('ba-text-group-base');
 		if (group.underline) {
-			const underline = ruby.createEl('u');
+			const underline = base.createEl('u');
 			this.appendPreviewText(underline, text);
 		} else {
-			this.appendPreviewText(ruby, text);
+			this.appendPreviewText(base, text);
 		}
-		if (group.rt) ruby.createEl('rt', { text: group.rt });
+		if (group.annotate) ruby.createEl('rt', { text: group.annotate });
 	}
 
 	private appendPreviewText(container: HTMLElement, text: string) {
@@ -305,54 +336,132 @@ export class AnnotateModal extends Modal {
 			return;
 		}
 
+		this.groupSettingsEl.createDiv({
+			cls: 'ba-annotate-settings-heading',
+			text: 'Text',
+		});
 		new Setting(this.groupSettingsEl)
-			.setName('Color')
+			.setName('Text color')
 			.addColorPicker((colorPicker) => {
 				colorPicker
-					.setValue(group.color ?? TEXT_GROUP_COLORS[0]!)
+					.setValue(group.textColor ?? DEFAULT_COLOR)
 					.onChange((value) => {
-						group.color = value;
-						this.renderTextGroupPreview();
-						this.renderFinalPreview();
+						group.textColor = value;
+						this.refreshPreviews();
 					});
 			});
 
 		new Setting(this.groupSettingsEl)
-			.setName('Underline')
+			.setName('Text background')
+			.addColorPicker((colorPicker) => {
+				colorPicker
+					.setValue(
+						group.textBackgroundColor ?? DEFAULT_COLOR,
+					)
+					.onChange((value) => {
+						group.textBackgroundColor = value;
+						this.refreshPreviews();
+					});
+			})
+			.addExtraButton((button) => {
+				button.extraSettingsEl.setAttribute(
+					'aria-label',
+					'Clear background',
+				);
+				button
+					.setIcon('x')
+					.onClick(() => {
+						group.textBackgroundColor = undefined;
+						this.refreshPreviews();
+						this.renderGroupSettings();
+					});
+			});
+
+		this.groupSettingsEl.createDiv({
+			cls: 'ba-annotate-settings-heading',
+			text: 'Underline',
+		});
+		new Setting(this.groupSettingsEl)
+			.setName('Show underline')
 			.addToggle((toggle) => {
 				toggle
 					.setValue(group.underline ?? false)
 					.onChange((value) => {
 						group.underline = value;
-						this.renderTextGroupPreview();
-						this.renderFinalPreview();
+						this.refreshPreviews();
 					});
 			});
 
 		new Setting(this.groupSettingsEl)
-			.setName('RT')
+			.setName('Underline color')
+			.addColorPicker((colorPicker) => {
+				colorPicker
+					.setValue(
+						group.underlineColor ?? DEFAULT_COLOR,
+					)
+					.onChange((value) => {
+						group.underlineColor = value;
+						this.refreshPreviews();
+					});
+			});
+
+		this.groupSettingsEl.createDiv({
+			cls: 'ba-annotate-settings-heading',
+			text: 'Annotate',
+		});
+		new Setting(this.groupSettingsEl)
+			.setName('Content')
 			.addText((input) => {
 				input
-					.setPlaceholder('Enter ruby text')
-					.setValue(group.rt ?? '')
+					.setPlaceholder('Enter annotate text')
+					.setValue(group.annotate ?? '')
 					.onChange((value) => {
-						group.rt = value;
-						this.renderTextGroupPreview();
-						this.renderFinalPreview();
+						group.annotate = value;
+						this.refreshPreviews();
 					});
 			});
 
 		new Setting(this.groupSettingsEl)
-			.setName('Annotation position')
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOption('over', 'Above')
-					.addOption('under', 'Below')
-					.setValue(group.rtPosition ?? 'over')
+			.setName('Annotate color')
+			.addColorPicker((colorPicker) => {
+				colorPicker
+					.setValue(group.annotateColor ?? DEFAULT_COLOR)
 					.onChange((value) => {
-						group.rtPosition = value === 'under' ? 'under' : 'over';
-						this.renderTextGroupPreview();
-						this.renderFinalPreview();
+						group.annotateColor = value;
+						this.refreshPreviews();
+					});
+			});
+
+		new Setting(this.groupSettingsEl)
+			.setName('Show annotate')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(group.annotateVisible ?? true)
+					.onChange((value) => {
+						group.annotateVisible = value;
+						this.refreshPreviews();
+					});
+			});
+
+		new Setting(this.groupSettingsEl)
+			.setName('Display below')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(group.annotatePosition === 'under')
+					.onChange((value) => {
+						group.annotatePosition = value ? 'under' : 'over';
+						this.refreshPreviews();
+					});
+			});
+
+		new Setting(this.groupSettingsEl)
+			.setName('Compact layout')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(group.annotateCompact ?? true)
+					.onChange((value) => {
+						group.annotateCompact = value;
+						this.refreshPreviews();
 					});
 			});
 	}
@@ -396,10 +505,15 @@ export class AnnotateModal extends Modal {
 		const group: TextGroup = {
 			start: first.start,
 			end: last.end,
-			color: this.createRandomGroupColor(),
+			textColor: DEFAULT_COLOR,
+			textBackgroundColor: undefined,
 			underline: false,
-			rt: '',
-			rtPosition: 'over',
+			underlineColor: DEFAULT_COLOR,
+			annotate: '',
+			annotateColor: DEFAULT_COLOR,
+			annotateVisible: true,
+			annotatePosition: 'under',
+			annotateCompact: true,
 		};
 		this.textGroups.push(group);
 		return group;
@@ -498,10 +612,8 @@ export class AnnotateModal extends Modal {
 
 	private updateSegmentButton(button: HTMLButtonElement, index: number) {
 		const groupIndex = this.getTextGroupIndex(index);
-		const group = this.textGroups[groupIndex];
 		const isGrouped = groupIndex !== -1;
 		const isSelected = this.selectedIndices.has(index);
-		button.setCssProps({ '--ba-text-group-color': group?.color ?? '' });
 		button.toggleClass('is-grouped', isGrouped);
 		button.toggleClass('is-selected', isSelected);
 		button.toggleClass(
@@ -557,23 +669,12 @@ export class AnnotateModal extends Modal {
 		this.renderSelectedTextGroup();
 	}
 
-	private createRandomGroupColor() {
-		const usedColors = new Set(this.textGroups.map((group) => group.color));
-		const availableColors = TEXT_GROUP_COLORS.filter(
-			(color) => !usedColors.has(color),
-		);
-		const colors = availableColors.length > 0
-			? availableColors
-			: TEXT_GROUP_COLORS;
-		const randomValue = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0;
-
-		return colors[randomValue % colors.length] ?? TEXT_GROUP_COLORS[0]!;
+	private normalizeColor(color: string | undefined, fallback: string) {
+		return /^#[0-9a-f]{6}$/i.test(color ?? '') ? color! : fallback;
 	}
 
-	private normalizeTextGroupColor(color: string | undefined) {
-		return /^#[0-9a-f]{6}$/i.test(color ?? '')
-			? color!
-			: this.createRandomGroupColor();
+	private normalizeOptionalColor(color: string | undefined) {
+		return /^#[0-9a-f]{6}$/i.test(color ?? '') ? color : undefined;
 	}
 
 	private save() {

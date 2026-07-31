@@ -28,10 +28,6 @@
 	font-size: var(--font-ui-large);
 }
 
-.ba-annotate-final-preview u {
-	text-decoration-color: var(--ba-text-group-color);
-}
-
 .ba-annotate-textarea {
 	box-sizing: border-box;
 	resize: none;
@@ -113,26 +109,54 @@
 	font-size: var(--font-ui-large);
 }
 
-.ba-annotate-text-group-preview u {
-	text-decoration-color: var(--ba-text-group-color);
+.ba-text-group-base {
+	background-color: var(--ba-text-background-color);
+	color: var(--ba-text-color);
 }
 
-.ba-annotate-text-group-preview ruby[data-ba-rt-position='over'],
-.ba-annotate-final-preview ruby[data-ba-rt-position='over'],
-div[data-ba-annotate-id] ruby[data-ba-rt-position='over'] {
+.ba-text-group u {
+	text-decoration-color: var(--ba-underline-color);
+}
+
+.ba-text-group rt {
+	color: var(--ba-annotate-color);
+}
+
+.ba-text-group[data-ba-annotate-position='over'] {
 	ruby-position: over;
 }
 
-.ba-annotate-text-group-preview ruby[data-ba-rt-position='under'],
-.ba-annotate-final-preview ruby[data-ba-rt-position='under'],
-div[data-ba-annotate-id] ruby[data-ba-rt-position='under'] {
+.ba-text-group[data-ba-annotate-position='under'] {
 	ruby-position: under;
+}
+
+.ba-text-group[data-ba-annotate-visible='false'] rt {
+	display: none;
+}
+
+.ba-text-group[data-ba-annotate-compact='true'] {
+	ruby-align: center;
+}
+
+.ba-text-group[data-ba-annotate-compact='true'] rt {
+	font-size: 0.55em;
+	line-height: 1;
+}
+
+.ba-text-group[data-ba-annotate-compact='false'] {
+	ruby-align: space-around;
 }
 
 .ba-annotate-group-settings {
 	box-sizing: border-box;
 	block-size: 13rem;
 	overflow-y: auto;
+}
+
+.ba-annotate-settings-heading {
+	padding: var(--size-4-2) var(--size-4-3);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
 }
 
 .ba-annotate-actions {
