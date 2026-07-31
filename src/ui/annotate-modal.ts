@@ -6,13 +6,18 @@ import {
 	Setting,
 } from 'obsidian';
 import {
+	DEFAULT_BUTTON_TEXT_COLOR,
+	DEFAULT_GROUP_COLOR,
+	FastGroupPreset,
+} from '../fast-group';
+import {
 	segmentText,
 	TextGroup,
 	TextSegment,
 } from '../text-segmentation';
 import { CreateAnnotateModal } from './create-annotate-modal';
 
-const DEFAULT_COLOR = '#000000';
+const DEFAULT_COLOR = DEFAULT_GROUP_COLOR;
 const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
 const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
 const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
@@ -20,6 +25,7 @@ const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
 export interface EditAnnotateModalOptions {
 	initialText?: string;
 	initialTextGroups?: TextGroup[];
+	fastGroupPresets?: FastGroupPreset[];
 	onSave: (text: string, textGroups: TextGroup[]) => void;
 	onDelete?: () => void;
 }
@@ -35,6 +41,7 @@ export class EditAnnotateModal extends Modal {
 	private groupSettingsEl!: HTMLElement;
 	private finalPreviewEl!: HTMLElement;
 	private groupTextButton!: ButtonComponent;
+	private readonly fastGroupButtons: ButtonComponent[] = [];
 	private ungroupTextButton!: ButtonComponent;
 	private ungroupAllTextButton!: ButtonComponent;
 	private clearTextGroupStyleButton!: ButtonComponent;
@@ -159,6 +166,23 @@ export class EditAnnotateModal extends Modal {
 		this.groupTextButton = new ButtonComponent(segmentActions)
 			.setButtonText('Group')
 			.onClick(() => this.createTextGroups());
+		this.fastGroupButtons.length = 0;
+		for (const preset of this.options.fastGroupPresets ?? []) {
+			const button = new ButtonComponent(segmentActions)
+				.setButtonText(preset.title.trim() || 'Fast group')
+				.onClick(() => this.createTextGroups(preset));
+			const buttonColor = preset.buttonColor ?? DEFAULT_COLOR;
+			button.buttonEl.addClass('ba-annotate-fast-group-button');
+			button.buttonEl.setCssProps({
+				'--ba-fast-group-button-color': buttonColor,
+				'--ba-fast-group-button-text-color':
+					preset.buttonTextColor ?? DEFAULT_BUTTON_TEXT_COLOR,
+			});
+			if (preset.description.trim()) {
+				button.setTooltip(preset.description.trim());
+			}
+			this.fastGroupButtons.push(button);
+		}
 
 		this.segmentsEl = segmentsColumn.createDiv('ba-annotate-segments');
 		this.segmentsEl.addEventListener('pointerdown', (event) => {
@@ -501,7 +525,7 @@ export class EditAnnotateModal extends Modal {
 			});
 	}
 
-	private createTextGroups() {
+	private createTextGroups(preset?: FastGroupPreset) {
 		const selected = Array.from(this.selectedIndices)
 			.filter((index) => !this.isSegmentGrouped(index))
 			.sort((a, b) => a - b);
@@ -513,13 +537,17 @@ export class EditAnnotateModal extends Modal {
 
 		for (const index of selected.slice(1)) {
 			if (index !== previous + 1) {
-				const group = this.addTextGroup(groupStart, previous);
+				const group = this.addTextGroup(
+					groupStart,
+					previous,
+					preset,
+				);
 				if (group) createdGroups.push(group);
 				groupStart = index;
 			}
 			previous = index;
 		}
-		const group = this.addTextGroup(groupStart, previous);
+		const group = this.addTextGroup(groupStart, previous, preset);
 		if (group) createdGroups.push(group);
 
 		this.textGroups.sort((a, b) => a.start - b.start);
@@ -532,7 +560,11 @@ export class EditAnnotateModal extends Modal {
 		this.renderFinalPreview();
 	}
 
-	private addTextGroup(firstIndex: number, lastIndex: number) {
+	private addTextGroup(
+		firstIndex: number,
+		lastIndex: number,
+		preset?: FastGroupPreset,
+	) {
 		const first = this.segments[firstIndex];
 		const last = this.segments[lastIndex];
 		if (!first || !last) return null;
@@ -540,15 +572,15 @@ export class EditAnnotateModal extends Modal {
 		const group: TextGroup = {
 			start: first.start,
 			end: last.end,
-			textColor: DEFAULT_COLOR,
-			textBackgroundColor: undefined,
-			underline: false,
-			underlineColor: DEFAULT_COLOR,
-			annotate: '',
-			annotateColor: DEFAULT_COLOR,
-			annotateVisible: true,
-			annotatePosition: 'under',
-			annotateCompact: true,
+			textColor: preset?.textColor ?? DEFAULT_COLOR,
+			textBackgroundColor: preset?.textBackgroundColor,
+			underline: preset?.underline ?? false,
+			underlineColor: preset?.underlineColor ?? DEFAULT_COLOR,
+			annotate: preset?.annotate ?? '',
+			annotateColor: preset?.annotateColor ?? DEFAULT_COLOR,
+			annotateVisible: preset?.annotateVisible ?? true,
+			annotatePosition: preset?.annotatePosition ?? 'under',
+			annotateCompact: preset?.annotateCompact ?? true,
 		};
 		this.textGroups.push(group);
 		return group;
@@ -745,8 +777,11 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private updateSegmentActionButtons() {
-		this.groupTextButton.buttonEl.disabled =
-			this.selectedIndices.size === 0;
+		const hasSelectedSegments = this.selectedIndices.size > 0;
+		this.groupTextButton.buttonEl.disabled = !hasSelectedSegments;
+		for (const button of this.fastGroupButtons) {
+			button.buttonEl.disabled = !hasSelectedSegments;
+		}
 		const hasSelectedTextGroup = this.selectedTextGroupIndex !== null;
 		this.ungroupTextButton.buttonEl.disabled = !hasSelectedTextGroup;
 		this.ungroupAllTextButton.buttonEl.disabled =

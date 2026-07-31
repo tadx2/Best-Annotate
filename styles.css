@@ -54,6 +54,8 @@
 
 .ba-annotate-section-actions {
 	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
 	gap: var(--size-2-2);
 }
 
@@ -61,6 +63,13 @@
 .ba-annotate-ungroup-button:not(:disabled):hover {
 	background-color: var(--color-yellow);
 	color: #000;
+}
+
+.ba-annotate-fast-group-button:not(:disabled),
+.ba-annotate-fast-group-button:not(:disabled):hover {
+	background-color: var(--ba-fast-group-button-color);
+	border-color: var(--ba-fast-group-button-color);
+	color: var(--ba-fast-group-button-text-color);
 }
 
 .ba-annotate-segments {
@@ -181,6 +190,20 @@
 
 .ba-annotate-setting-disabled {
 	opacity: 0.5;
+}
+
+.ba-annotate-fast-group-preset {
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ba-annotate-fast-group-preset > summary {
+	cursor: pointer;
+	padding: var(--size-4-3) 0;
+	font-weight: var(--font-semibold);
+}
+
+.ba-annotate-fast-group-preset-content {
+	padding-inline-start: var(--size-4-3);
 }
 
 .ba-annotate-actions {

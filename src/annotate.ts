@@ -35,6 +35,7 @@ export function registerAnnotateMenu(
 								const id = insertAnnotate(editor, cursor, text, []);
 								openEditAnnotateModal(
 									plugin,
+									settings,
 									editor,
 									id,
 									text,
@@ -63,6 +64,7 @@ export function registerAnnotateMenu(
 
 		openEditAnnotateModal(
 			plugin,
+			settings,
 			view.editor,
 			id,
 			content.text,
@@ -73,6 +75,7 @@ export function registerAnnotateMenu(
 
 function openEditAnnotateModal(
 	plugin: Plugin,
+	settings: BetterAnnotateSettings,
 	editor: Editor,
 	id: string,
 	text: string,
@@ -81,6 +84,7 @@ function openEditAnnotateModal(
 	new EditAnnotateModal(plugin.app, {
 		initialText: text,
 		initialTextGroups: textGroups,
+		fastGroupPresets: settings.fastGroupPresets,
 		onSave: (updatedText, updatedTextGroups) => {
 			updateAnnotate(editor, id, updatedText, updatedTextGroups);
 		},
