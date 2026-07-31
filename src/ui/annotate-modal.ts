@@ -15,12 +15,13 @@ import {
 	TextGroup,
 	TextSegment,
 } from '../text-segmentation';
+import {
+	appendAnnotatedText,
+	createTextGroupElement,
+} from '../text-group-renderer';
 import { CreateAnnotateModal } from './create-annotate-modal';
 
 const DEFAULT_COLOR = DEFAULT_GROUP_COLOR;
-const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
-const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
-const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
 
 export interface EditAnnotateModalOptions {
 	initialText?: string;
@@ -317,81 +318,22 @@ export class EditAnnotateModal extends Modal {
 		}
 
 		const groupText = this.text.slice(group.start, group.end);
-		this.appendTextGroup(this.textGroupPreviewEl, group, groupText);
+		this.textGroupPreviewEl.appendChild(
+			createTextGroupElement(
+				this.textGroupPreviewEl.ownerDocument,
+				group,
+				groupText,
+			),
+		);
 	}
 
 	private renderFinalPreview() {
 		this.finalPreviewEl.empty();
-		const groups = [...this.textGroups].sort((a, b) => a.start - b.start);
-		let cursor = 0;
-
-		for (const group of groups) {
-			if (
-				group.start < cursor ||
-				group.start < 0 ||
-				group.end > this.text.length
-			) {
-				continue;
-			}
-
-			this.appendPreviewText(
-				this.finalPreviewEl,
-				this.text.slice(cursor, group.start),
-			);
-			this.appendTextGroup(
-				this.finalPreviewEl,
-				group,
-				this.text.slice(group.start, group.end),
-			);
-			cursor = group.end;
-		}
-
-		this.appendPreviewText(
+		appendAnnotatedText(
 			this.finalPreviewEl,
-			this.text.slice(cursor),
+			this.text,
+			this.textGroups,
 		);
-	}
-
-	private appendTextGroup(
-		container: HTMLElement,
-		group: TextGroup,
-		text: string,
-	) {
-		const ruby = container.createEl('ruby', { cls: 'ba-text-group' });
-		ruby.setCssProps({
-			'--ba-text-color': group.textColor ?? '',
-			'--ba-text-background-color':
-				group.textBackgroundColor ?? 'transparent',
-			'--ba-underline-color': group.underlineColor ?? '',
-			'--ba-annotate-color': group.annotateColor ?? '',
-		});
-		ruby.setAttribute(
-			ANNOTATE_POSITION_ATTRIBUTE,
-			group.annotatePosition ?? 'under',
-		);
-		ruby.setAttribute(
-			ANNOTATE_VISIBLE_ATTRIBUTE,
-			String(group.annotateVisible ?? true),
-		);
-		ruby.setAttribute(
-			ANNOTATE_COMPACT_ATTRIBUTE,
-			String(group.annotateCompact ?? true),
-		);
-		const base = ruby.createSpan('ba-text-group-base');
-		if (group.underline) {
-			const underline = base.createEl('u');
-			this.appendPreviewText(underline, text);
-		} else {
-			this.appendPreviewText(base, text);
-		}
-		if (group.annotate) ruby.createEl('rt', { text: group.annotate });
-	}
-
-	private appendPreviewText(container: HTMLElement, text: string) {
-		text.split(/\r?\n/).forEach((line, index) => {
-			if (index > 0) container.createEl('br');
-			container.appendText(line);
-		});
 	}
 
 	private renderGroupSettings() {

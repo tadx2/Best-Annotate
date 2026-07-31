@@ -1,18 +1,21 @@
 import { Editor, EditorPosition, MarkdownView, Notice, Plugin } from 'obsidian';
 import { BetterAnnotateSettings } from './settings';
 import { TextGroup } from './text-segmentation';
+import {
+	ANNOTATE_COLOR_ATTRIBUTE,
+	ANNOTATE_COMPACT_ATTRIBUTE,
+	ANNOTATE_POSITION_ATTRIBUTE,
+	ANNOTATE_VISIBLE_ATTRIBUTE,
+	appendAnnotatedText,
+	TEXT_BACKGROUND_COLOR_ATTRIBUTE,
+	TEXT_COLOR_ATTRIBUTE,
+	UNDERLINE_ATTRIBUTE,
+	UNDERLINE_COLOR_ATTRIBUTE,
+} from './text-group-renderer';
 import { EditAnnotateModal } from './ui/annotate-modal';
 import { CreateAnnotateModal } from './ui/create-annotate-modal';
 
 const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
-const TEXT_COLOR_ATTRIBUTE = 'data-ba-text-color';
-const TEXT_BACKGROUND_COLOR_ATTRIBUTE = 'data-ba-text-background-color';
-const UNDERLINE_ATTRIBUTE = 'data-ba-underline';
-const UNDERLINE_COLOR_ATTRIBUTE = 'data-ba-underline-color';
-const ANNOTATE_COLOR_ATTRIBUTE = 'data-ba-annotate-color';
-const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
-const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
-const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
 
 export function registerAnnotateMenu(
 	plugin: Plugin,
@@ -175,87 +178,10 @@ function createAnnotateBlock(
 	text: string,
 	textGroups: TextGroup[],
 ) {
-	const content = renderGroupedText(text, textGroups);
-	return `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">${content}</div>`;
-}
-
-function renderGroupedText(text: string, textGroups: TextGroup[]) {
-	const groups = textGroups
-		.filter(
-			(group) =>
-				group.start >= 0 &&
-				group.end > group.start &&
-				group.end <= text.length,
-		)
-		.sort((a, b) => a.start - b.start);
-	let content = '';
-	let cursor = 0;
-
-	for (const group of groups) {
-		if (group.start < cursor) continue;
-
-		content += renderText(text.slice(cursor, group.start));
-		const textColor = normalizeColor(group.textColor, '#000000');
-		const textBackgroundColor = normalizeOptionalColor(
-			group.textBackgroundColor,
-		);
-		const underlineColor = normalizeColor(
-			group.underlineColor,
-			textColor,
-		);
-		const annotateColor = normalizeColor(group.annotateColor, '#000000');
-		const annotatePosition = group.annotatePosition === 'over'
-			? 'over'
-			: 'under';
-		const annotateVisible = group.annotateVisible ?? true;
-		const annotateCompact = group.annotateCompact ?? true;
-		const rubyStyles = [
-			`--ba-text-color: ${textColor}`,
-			`--ba-text-background-color: ${textBackgroundColor ?? 'transparent'}`,
-			`--ba-underline-color: ${underlineColor}`,
-			`--ba-annotate-color: ${annotateColor}`,
-			`ruby-position: ${annotatePosition}`,
-			`ruby-align: ${annotateCompact ? 'center' : 'space-around'}`,
-		].join('; ');
-		const groupText = renderText(text.slice(group.start, group.end));
-		const decoratedText = group.underline
-			? `<u style="text-decoration-color: ${underlineColor};">${groupText}</u>`
-			: groupText;
-		const baseStyles = [
-			`color: ${textColor}`,
-			`background-color: ${textBackgroundColor ?? 'transparent'}`,
-		].join('; ');
-		const base = `<span class="ba-text-group-base" style="${baseStyles};">${decoratedText}</span>`;
-		const annotateStyles = [
-			`color: ${annotateColor}`,
-			...(annotateVisible ? [] : ['display: none']),
-			...(annotateCompact
-				? ['font-size: 0.55em', 'line-height: 1']
-				: []),
-		].join('; ');
-		const annotate = group.annotate
-			? `<rt style="${annotateStyles};">${renderText(group.annotate)}</rt>`
-			: '';
-		const backgroundAttribute = textBackgroundColor
-			? ` ${TEXT_BACKGROUND_COLOR_ATTRIBUTE}="${textBackgroundColor}"`
-			: '';
-		content += `<ruby class="ba-text-group" style="${rubyStyles};" ${TEXT_COLOR_ATTRIBUTE}="${textColor}"${backgroundAttribute} ${UNDERLINE_ATTRIBUTE}="${String(group.underline ?? false)}" ${UNDERLINE_COLOR_ATTRIBUTE}="${underlineColor}" ${ANNOTATE_COLOR_ATTRIBUTE}="${annotateColor}" ${ANNOTATE_VISIBLE_ATTRIBUTE}="${String(annotateVisible)}" ${ANNOTATE_POSITION_ATTRIBUTE}="${annotatePosition}" ${ANNOTATE_COMPACT_ATTRIBUTE}="${String(annotateCompact)}">${base}${annotate}</ruby>`;
-		cursor = group.end;
-	}
-
-	return content + renderText(text.slice(cursor));
-}
-
-function renderText(text: string) {
-	return escapeHtml(text).replace(/\r?\n/g, '<br>');
-}
-
-function normalizeColor(color: string | undefined, fallback: string) {
-	return /^#[0-9a-f]{6}$/i.test(color ?? '') ? color! : fallback;
-}
-
-function normalizeOptionalColor(color: string | undefined) {
-	return /^#[0-9a-f]{6}$/i.test(color ?? '') ? color : undefined;
+	const annotate = createDiv();
+	annotate.setAttribute(ANNOTATE_ID_ATTRIBUTE, id);
+	appendAnnotatedText(annotate, text, textGroups);
+	return annotate.outerHTML;
 }
 
 function extractAnnotateContent(annotate: HTMLElement) {
@@ -315,18 +241,6 @@ function extractAnnotateContent(annotate: HTMLElement) {
 
 	annotate.childNodes.forEach(visit);
 	return { text, textGroups };
-}
-
-function escapeHtml(text: string) {
-	// 将用户输入中的 HTML 特殊字符转成普通文本。
-	// 例如输入 <script> 时，最终只会显示这段文字，不会被浏览器当作标签执行。
-	// 必须先替换 &，否则后续生成的 &lt;、&gt; 等内容会被再次转义。
-	return text
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#039;');
 }
 
 function offsetPosition(
