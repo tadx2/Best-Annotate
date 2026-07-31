@@ -13,6 +13,7 @@ export class AnnotateModal extends Modal {
 		app: App,
 		private readonly onSave: (text: string) => void,
 		initialText = '',
+		private readonly onDelete?: () => void,
 	) {
 		super(app);
 		this.text = initialText;
@@ -33,7 +34,17 @@ export class AnnotateModal extends Modal {
 		textArea.inputEl.addClass('ba-annotate-textarea');
 		textArea.inputEl.focus();
 
-		new Setting(this.contentEl)
+		const actions = new Setting(this.contentEl);
+		if (this.onDelete) {
+			actions.addButton((button) => {
+				button
+					.setButtonText('Delete')
+					.setWarning()
+					.onClick(() => this.delete());
+			});
+		}
+
+		actions
 			.addButton((button) => {
 				button.setButtonText('Cancel').onClick(() => this.close());
 			})
@@ -57,6 +68,11 @@ export class AnnotateModal extends Modal {
 		}
 
 		this.onSave(text);
+		this.close();
+	}
+
+	private delete() {
+		this.onDelete?.();
 		this.close();
 	}
 }

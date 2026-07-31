@@ -43,6 +43,7 @@ export function registerAnnotateMenu(plugin: Plugin) {
 			plugin.app,
 			(text) => updateAnnotate(view.editor, id, text),
 			annotate.innerText,
+			() => deleteAnnotate(view.editor, id),
 		).open();
 	});
 }
@@ -62,30 +63,59 @@ function insertAnnotate(
 	editor.focus();
 }
 
+function deleteAnnotate(editor: Editor, id: string) {
+	const source = editor.getValue();
+	const range = findAnnotateRange(source, id);
+
+	if (!range) {
+		new Notice('Could not find this annotate.');
+		return;
+	}
+
+	const from = editor.offsetToPos(range.start);
+	const to = editor.offsetToPos(range.end);
+
+	editor.replaceRange('', from, to);
+	editor.setCursor(editor.offsetToPos(range.start));
+	editor.focus();
+}
+
 function updateAnnotate(editor: Editor, id: string, text: string) {
 	const source = editor.getValue();
-	const openingTag = `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">`;
-	const startOffset = source.indexOf(openingTag);
-	const endOffset = source.indexOf('</div>', startOffset + openingTag.length);
+	const range = findAnnotateRange(source, id);
 
-	if (startOffset === -1 || endOffset === -1) {
+	if (!range) {
 		new Notice('Could not find this annotate.');
 		return;
 	}
 
 	const replacement = createAnnotateBlock(id, text);
-	const from = editor.offsetToPos(startOffset);
-	const blockEndOffset = endOffset + '</div>'.length;
-	const trailingNewlines = source.slice(blockEndOffset).match(/^\n{0,2}/)?.[0]
-		.length ?? 0;
-	const to = editor.offsetToPos(blockEndOffset + trailingNewlines);
+	const from = editor.offsetToPos(range.start);
+	const to = editor.offsetToPos(range.end);
 	const replacementWithNewlines = `${replacement}\n\n`;
 
 	editor.replaceRange(replacementWithNewlines, from, to);
 	editor.setCursor(
-		editor.offsetToPos(startOffset + replacementWithNewlines.length),
+		editor.offsetToPos(range.start + replacementWithNewlines.length),
 	);
 	editor.focus();
+}
+
+function findAnnotateRange(source: string, id: string) {
+	const openingTag = `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}">`;
+	const start = source.indexOf(openingTag);
+	const closingTagStart = source.indexOf(
+		'</div>',
+		start + openingTag.length,
+	);
+
+	if (start === -1 || closingTagStart === -1) return null;
+
+	const blockEnd = closingTagStart + '</div>'.length;
+	const trailingNewlines = source.slice(blockEnd).match(/^\n{0,2}/)?.[0]
+		.length ?? 0;
+
+	return { start, end: blockEnd + trailingNewlines };
 }
 
 function createAnnotateBlock(id: string, text: string) {
