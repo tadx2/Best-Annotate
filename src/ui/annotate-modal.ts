@@ -22,6 +22,7 @@ const TEXT_GROUP_COLORS = [
 	'#ffb74d',
 	'#f06292',
 ];
+const RT_POSITION_ATTRIBUTE = 'data-ba-rt-position';
 
 export interface AnnotateModalOptions {
 	initialText?: string;
@@ -37,7 +38,9 @@ export class AnnotateModal extends Modal {
 	private textGroups: TextGroup[];
 	private segments: TextSegment[] = [];
 	private segmentsEl!: HTMLElement;
+	private textGroupPreviewEl!: HTMLElement;
 	private groupSettingsEl!: HTMLElement;
+	private finalPreviewEl!: HTMLElement;
 	private createTextGroupButton!: ButtonComponent;
 	private activePointerId: number | null = null;
 	private dragShouldSelect = true;
@@ -64,12 +67,42 @@ export class AnnotateModal extends Modal {
 
 	onOpen() {
 		this.setTitle(this.options.onDelete ? 'Edit annotate' : 'Add annotate');
+		this.modalEl.addClass('ba-annotate-modal');
+		const layout = this.contentEl.createDiv('ba-annotate-layout');
+		const finalPreviewSection = layout.createDiv(
+			'ba-annotate-final-preview-section',
+		);
+		finalPreviewSection.createDiv({
+			cls: 'ba-annotate-section-label',
+			text: 'Final preview',
+		});
+		this.finalPreviewEl = finalPreviewSection.createDiv(
+			'ba-annotate-final-preview',
+		);
+		const textColumn = layout.createDiv('ba-annotate-column');
+		const groupColumn = layout.createDiv('ba-annotate-column');
 
-		this.contentEl.createDiv({
+		groupColumn.createDiv({
+			cls: 'ba-annotate-section-label',
+			text: 'Text group preview',
+		});
+		this.textGroupPreviewEl = groupColumn.createDiv(
+			'ba-annotate-text-group-preview',
+		);
+
+		groupColumn.createDiv({
+			cls: 'ba-annotate-section-label',
+			text: 'Text group settings',
+		});
+		this.groupSettingsEl = groupColumn.createDiv(
+			'ba-annotate-group-settings',
+		);
+
+		textColumn.createDiv({
 			cls: 'ba-annotate-section-label',
 			text: 'Text',
 		});
-		const textArea = new TextAreaComponent(this.contentEl)
+		const textArea = new TextAreaComponent(textColumn)
 			.setPlaceholder('Enter annotate text')
 			.setValue(this.text)
 			.onChange((value) => {
@@ -78,13 +111,14 @@ export class AnnotateModal extends Modal {
 				this.textGroups = [];
 				this.selectedTextGroupIndex = null;
 				this.renderSegments();
-				this.renderGroupSettings();
+				this.renderSelectedTextGroup();
+				this.renderFinalPreview();
 			});
 
 		textArea.inputEl.rows = 5;
 		textArea.inputEl.addClass('ba-annotate-textarea');
 
-		const segmentsHeader = this.contentEl.createDiv(
+		const segmentsHeader = textColumn.createDiv(
 			'ba-annotate-section-header',
 		);
 		segmentsHeader.createDiv({
@@ -95,7 +129,7 @@ export class AnnotateModal extends Modal {
 			.setButtonText('Create text group')
 			.onClick(() => this.createTextGroups());
 
-		this.segmentsEl = this.contentEl.createDiv('ba-annotate-segments');
+		this.segmentsEl = textColumn.createDiv('ba-annotate-segments');
 		this.segmentsEl.addEventListener('pointerdown', (event) => {
 			this.startSegmentDrag(event);
 		});
@@ -109,16 +143,9 @@ export class AnnotateModal extends Modal {
 			this.stopSegmentDrag(event.pointerId);
 		});
 
-		this.contentEl.createDiv({
-			cls: 'ba-annotate-section-label',
-			text: 'Group settings',
-		});
-		this.groupSettingsEl = this.contentEl.createDiv(
-			'ba-annotate-group-settings',
-		);
-
 		this.renderSegments();
-		this.renderGroupSettings();
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
 
 		const actions = this.contentEl.createDiv('ba-annotate-actions');
 		if (this.options.onDelete) {
@@ -180,6 +207,89 @@ export class AnnotateModal extends Modal {
 		this.updateCreateTextGroupButton();
 	}
 
+	private renderSelectedTextGroup() {
+		this.renderTextGroupPreview();
+		this.renderGroupSettings();
+	}
+
+	private renderTextGroupPreview() {
+		this.textGroupPreviewEl.empty();
+		const selectedIndex = this.selectedTextGroupIndex;
+		const group = selectedIndex === null
+			? undefined
+			: this.textGroups[selectedIndex];
+
+		if (!group) {
+			this.textGroupPreviewEl.createDiv({
+				cls: 'setting-item-description',
+				text: 'Select a text group to preview it.',
+			});
+			return;
+		}
+
+		const groupText = this.text.slice(group.start, group.end);
+		this.appendTextGroup(this.textGroupPreviewEl, group, groupText);
+	}
+
+	private renderFinalPreview() {
+		this.finalPreviewEl.empty();
+		const groups = [...this.textGroups].sort((a, b) => a.start - b.start);
+		let cursor = 0;
+
+		for (const group of groups) {
+			if (
+				group.start < cursor ||
+				group.start < 0 ||
+				group.end > this.text.length
+			) {
+				continue;
+			}
+
+			this.appendPreviewText(
+				this.finalPreviewEl,
+				this.text.slice(cursor, group.start),
+			);
+			this.appendTextGroup(
+				this.finalPreviewEl,
+				group,
+				this.text.slice(group.start, group.end),
+			);
+			cursor = group.end;
+		}
+
+		this.appendPreviewText(
+			this.finalPreviewEl,
+			this.text.slice(cursor),
+		);
+	}
+
+	private appendTextGroup(
+		container: HTMLElement,
+		group: TextGroup,
+		text: string,
+	) {
+		const ruby = container.createEl('ruby');
+		ruby.setCssProps({ '--ba-text-group-color': group.color ?? '' });
+		ruby.setAttribute(
+			RT_POSITION_ATTRIBUTE,
+			group.rtPosition ?? 'over',
+		);
+		if (group.underline) {
+			const underline = ruby.createEl('u');
+			this.appendPreviewText(underline, text);
+		} else {
+			this.appendPreviewText(ruby, text);
+		}
+		if (group.rt) ruby.createEl('rt', { text: group.rt });
+	}
+
+	private appendPreviewText(container: HTMLElement, text: string) {
+		text.split(/\r?\n/).forEach((line, index) => {
+			if (index > 0) container.createEl('br');
+			container.appendText(line);
+		});
+	}
+
 	private renderGroupSettings() {
 		this.groupSettingsEl.empty();
 		const selectedIndex = this.selectedTextGroupIndex;
@@ -202,6 +312,8 @@ export class AnnotateModal extends Modal {
 					.setValue(group.color ?? TEXT_GROUP_COLORS[0]!)
 					.onChange((value) => {
 						group.color = value;
+						this.renderTextGroupPreview();
+						this.renderFinalPreview();
 					});
 			});
 
@@ -212,6 +324,8 @@ export class AnnotateModal extends Modal {
 					.setValue(group.underline ?? false)
 					.onChange((value) => {
 						group.underline = value;
+						this.renderTextGroupPreview();
+						this.renderFinalPreview();
 					});
 			});
 
@@ -223,6 +337,8 @@ export class AnnotateModal extends Modal {
 					.setValue(group.rt ?? '')
 					.onChange((value) => {
 						group.rt = value;
+						this.renderTextGroupPreview();
+						this.renderFinalPreview();
 					});
 			});
 
@@ -235,6 +351,8 @@ export class AnnotateModal extends Modal {
 					.setValue(group.rtPosition ?? 'over')
 					.onChange((value) => {
 						group.rtPosition = value === 'under' ? 'under' : 'over';
+						this.renderTextGroupPreview();
+						this.renderFinalPreview();
 					});
 			});
 	}
@@ -266,7 +384,8 @@ export class AnnotateModal extends Modal {
 			? this.textGroups.indexOf(createdGroups[0])
 			: null;
 		this.renderSegments();
-		this.renderGroupSettings();
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
 	}
 
 	private addTextGroup(firstIndex: number, lastIndex: number) {
@@ -420,7 +539,7 @@ export class AnnotateModal extends Modal {
 		this.selectedTextGroupIndex =
 			this.selectedTextGroupIndex === index ? null : index;
 		this.renderSegments();
-		this.renderGroupSettings();
+		this.renderSelectedTextGroup();
 	}
 
 	private clearSelectedTextGroup() {
@@ -435,7 +554,7 @@ export class AnnotateModal extends Modal {
 					this.updateSegmentButton(button, index);
 				}
 			});
-		this.renderGroupSettings();
+		this.renderSelectedTextGroup();
 	}
 
 	private createRandomGroupColor() {
