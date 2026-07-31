@@ -34,9 +34,10 @@ export class EditAnnotateModal extends Modal {
 	private textGroupPreviewEl!: HTMLElement;
 	private groupSettingsEl!: HTMLElement;
 	private finalPreviewEl!: HTMLElement;
-	private createTextGroupButton!: ButtonComponent;
-	private deleteTextGroupButton!: ButtonComponent;
-	private clearTextGroupButton!: ButtonComponent;
+	private groupTextButton!: ButtonComponent;
+	private ungroupTextButton!: ButtonComponent;
+	private clearTextGroupStyleButton!: ButtonComponent;
+	private clearTextGroupAllButton!: ButtonComponent;
 	private activePointerId: number | null = null;
 	private dragShouldSelect = true;
 	private selectedTextGroupIndex: number | null = null;
@@ -109,10 +110,26 @@ export class EditAnnotateModal extends Modal {
 			'ba-annotate-text-group-preview',
 		);
 
-		groupColumn.createDiv({
+		const groupSettingsHeader = groupColumn.createDiv(
+			'ba-annotate-section-header',
+		);
+		groupSettingsHeader.createDiv({
 			cls: 'ba-annotate-section-label',
 			text: 'Text group settings',
 		});
+		const groupSettingsActions = groupSettingsHeader.createDiv(
+			'ba-annotate-section-actions',
+		);
+		this.clearTextGroupStyleButton = new ButtonComponent(
+			groupSettingsActions,
+		)
+			.setButtonText('Clear style')
+			.onClick(() => this.clearTextGroupStyles());
+		this.clearTextGroupAllButton = new ButtonComponent(
+			groupSettingsActions,
+		)
+			.setButtonText('Clear all')
+			.onClick(() => this.clearTextGroupAll());
 		this.groupSettingsEl = groupColumn.createDiv(
 			'ba-annotate-group-settings',
 		);
@@ -127,15 +144,14 @@ export class EditAnnotateModal extends Modal {
 		const segmentActions = segmentsHeader.createDiv(
 			'ba-annotate-section-actions',
 		);
-		this.deleteTextGroupButton = new ButtonComponent(segmentActions)
-			.setButtonText('Delete')
-			.setWarning()
-			.onClick(() => this.deleteTextGroup());
-		this.clearTextGroupButton = new ButtonComponent(segmentActions)
-			.setButtonText('Clear')
-			.onClick(() => this.clearTextGroupStyles());
-		this.createTextGroupButton = new ButtonComponent(segmentActions)
-			.setButtonText('Create')
+		this.ungroupTextButton = new ButtonComponent(segmentActions)
+			.setButtonText('Ungroup')
+			.onClick(() => this.ungroupTextGroup());
+		this.ungroupTextButton.buttonEl.addClass(
+			'ba-annotate-ungroup-button',
+		);
+		this.groupTextButton = new ButtonComponent(segmentActions)
+			.setButtonText('Group')
 			.onClick(() => this.createTextGroups());
 
 		this.segmentsEl = segmentsColumn.createDiv('ba-annotate-segments');
@@ -532,7 +548,7 @@ export class EditAnnotateModal extends Modal {
 		return group;
 	}
 
-	private deleteTextGroup() {
+	private ungroupTextGroup() {
 		const selectedIndex = this.selectedTextGroupIndex;
 		if (selectedIndex === null || !this.textGroups[selectedIndex]) return;
 
@@ -544,12 +560,25 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private clearTextGroupStyles() {
-		const selectedIndex = this.selectedTextGroupIndex;
-		const group = selectedIndex === null
-			? undefined
-			: this.textGroups[selectedIndex];
+		const group = this.getSelectedTextGroup();
 		if (!group) return;
 
+		this.resetTextGroupStyles(group);
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
+	}
+
+	private clearTextGroupAll() {
+		const group = this.getSelectedTextGroup();
+		if (!group) return;
+
+		this.resetTextGroupStyles(group);
+		group.annotate = '';
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
+	}
+
+	private resetTextGroupStyles(group: TextGroup) {
 		group.textColor = DEFAULT_COLOR;
 		group.textBackgroundColor = undefined;
 		group.underline = false;
@@ -558,8 +587,13 @@ export class EditAnnotateModal extends Modal {
 		group.annotateVisible = true;
 		group.annotatePosition = 'under';
 		group.annotateCompact = true;
-		this.renderSelectedTextGroup();
-		this.renderFinalPreview();
+	}
+
+	private getSelectedTextGroup() {
+		const selectedIndex = this.selectedTextGroupIndex;
+		return selectedIndex === null
+			? undefined
+			: this.textGroups[selectedIndex];
 	}
 
 	private startSegmentDrag(event: PointerEvent) {
@@ -672,11 +706,14 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private updateSegmentActionButtons() {
-		this.createTextGroupButton.buttonEl.disabled =
+		this.groupTextButton.buttonEl.disabled =
 			this.selectedIndices.size === 0;
 		const hasSelectedTextGroup = this.selectedTextGroupIndex !== null;
-		this.deleteTextGroupButton.buttonEl.disabled = !hasSelectedTextGroup;
-		this.clearTextGroupButton.buttonEl.disabled = !hasSelectedTextGroup;
+		this.ungroupTextButton.buttonEl.disabled = !hasSelectedTextGroup;
+		this.clearTextGroupStyleButton.buttonEl.disabled =
+			!hasSelectedTextGroup;
+		this.clearTextGroupAllButton.buttonEl.disabled =
+			!hasSelectedTextGroup;
 	}
 
 	private isSegmentGrouped(index: number) {

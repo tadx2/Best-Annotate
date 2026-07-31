@@ -57,6 +57,12 @@
 	gap: var(--size-2-2);
 }
 
+.ba-annotate-ungroup-button:not(:disabled),
+.ba-annotate-ungroup-button:not(:disabled):hover {
+	background-color: var(--color-yellow);
+	color: #000;
+}
+
 .ba-annotate-segments {
 	display: flex;
 	flex: 1;
