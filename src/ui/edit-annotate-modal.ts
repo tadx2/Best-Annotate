@@ -184,17 +184,17 @@ export class EditAnnotateModal extends Modal {
 			tabs,
 			[
 				{
-					id: 'paragraph',
-					label: 'Paragraph',
-					panelEl: paragraphTabPanel,
-				},
-				{
 					id: 'text-group',
 					label: 'Text Group',
 					panelEl: textGroupTabPanel,
 				},
+				{
+					id: 'paragraph',
+					label: 'Paragraph',
+					panelEl: paragraphTabPanel,
+				},
 			] as const,
-			'paragraph',
+			'text-group',
 		);
 
 		const paragraphSettingSection = paragraphTabPanel.createDiv(

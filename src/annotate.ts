@@ -27,10 +27,11 @@ export function registerAnnotateMenu(
 							settings.defaultAnnotateAppearance,
 						);
 						new CreateAnnotateModal(plugin.app, {
-							initialText: settings.devMode &&
-								settings.addTestTextOnCreate
-								? settings.testText
-								: settings.defaultTextContent,
+							initialText:
+								settings.devMode &&
+								settings.useDefaultTextContent
+									? settings.defaultTextContent
+									: '',
 							onSave: (text) => {
 								const id = insertAnnotate(
 									editor,

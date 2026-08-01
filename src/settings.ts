@@ -13,13 +13,9 @@ import { createFastGroupPreset, FastGroupPreset } from './fast-group';
 import { createAnnotateBlockAppearanceSettingDefinitions } from './ui/annotate-block-appearance-settings';
 import { createTextGroupAppearanceSettingDefinitions } from './ui/text-group-appearance-settings';
 
-const DEFAULT_TEST_TEXT =
-	'This is a test text for debugging in developer mode.这是一段测试文字，用于开发者模式下调试。これは開発者モードでデバッグするためのテスト文章です。이것은 개발자 모드에서 디버깅하기 위한 테스트 텍스트입니다.Ceci est un texte de test pour le débogage en mode développeur.Dies ist ein Testtext zum Debuggen im Entwicklermodus.Este es un texto de prueba para depuración en modo desarrollador.Это тестовый текст для отладки в режиме разработчика.هذا نص اختباري للتصحيح في وضع المطور.';
-
 export interface BetterAnnotateSettings {
 	devMode: boolean;
-	addTestTextOnCreate: boolean;
-	testText: string;
+	useDefaultTextContent: boolean;
 	defaultTextContent: string;
 	defaultAnnotateAppearance: AnnotateBlockAppearance;
 	fastGroupPresets: FastGroupPreset[];
@@ -27,8 +23,7 @@ export interface BetterAnnotateSettings {
 
 export const DEFAULT_SETTINGS: BetterAnnotateSettings = {
 	devMode: true,
-	addTestTextOnCreate: true,
-	testText: DEFAULT_TEST_TEXT,
+	useDefaultTextContent: true,
 	defaultTextContent: '',
 	defaultAnnotateAppearance: createDefaultAnnotateBlockAppearance(),
 	fastGroupPresets: [],
@@ -58,15 +53,14 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 				},
 			},
 			{
-				name: 'Add test text when creating',
-				desc: 'Fill the create annotate modal with test text.',
+				name: 'Use default text content',
+				desc: 'Fill new annotates with Text Content in development mode.',
 				control: {
 					type: 'toggle',
-					key: 'addTestTextOnCreate',
+					key: 'useDefaultTextContent',
 					disabled: () => !this.plugin.settings.devMode,
 				},
 			},
-			this.createTestTextDefinition(),
 			...createAnnotateBlockAppearanceSettingDefinitions(
 				this.plugin.settings.defaultAnnotateAppearance,
 				{
@@ -83,58 +77,31 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 	async setControlValue(key: string, value: unknown) {
 		await super.setControlValue(key, value);
 
-		if (key === 'devMode') {
+		if (key === 'devMode' || key === 'useDefaultTextContent') {
 			this.update();
 		}
-	}
-
-	private createTestTextDefinition(): SettingDefinitionItem {
-		return {
-			name: 'Test text',
-			desc: 'Text inserted into the create annotate modal.',
-			render: (setting) => {
-				const disabled = !this.plugin.settings.devMode;
-				setting.settingEl.toggleClass(
-					'ba-annotate-setting-disabled',
-					disabled,
-				);
-
-				setting
-					.addTextArea((textArea) => {
-						textArea.inputEl.rows = 6;
-						textArea
-							.setValue(this.plugin.settings.testText)
-							.setDisabled(disabled)
-							.onChange(async (value) => {
-								this.plugin.settings.testText = value;
-								await this.plugin.saveSettings();
-							});
-					})
-					.addButton((button) => {
-						button
-							.setButtonText('Restore')
-							.setDisabled(disabled)
-							.onClick(async () => {
-								this.plugin.settings.testText = DEFAULT_TEST_TEXT;
-								await this.plugin.saveSettings();
-								this.update();
-							});
-					});
-			},
-		};
 	}
 
 	private createDefaultTextContentDefinition(): SettingDefinition {
 		return {
 			name: 'Text content',
-			desc: 'Default text for new annotates. Development test text has higher priority when enabled.',
+			desc: 'Only used when Dev mode and Use default text content are enabled.',
 			render: (setting) => {
+				const disabled = !(
+					this.plugin.settings.devMode &&
+					this.plugin.settings.useDefaultTextContent
+				);
+				setting.settingEl.toggleClass(
+					'ba-annotate-setting-disabled',
+					disabled,
+				);
 				setting.nameEl.setText(['Text', 'Content'].join(' '));
 				setting.addTextArea((textArea) => {
 					textArea.inputEl.rows = 5;
 					textArea.inputEl.addClass('ba-annotate-textarea');
 					textArea
 						.setValue(this.plugin.settings.defaultTextContent)
+						.setDisabled(disabled)
 						.onChange(async (value) => {
 							this.plugin.settings.defaultTextContent = value;
 							await this.plugin.saveSettings();
