@@ -93,7 +93,7 @@
 
 .ba-annotate-final-preview {
 	box-sizing: border-box;
-	block-size: 12rem;
+	block-size: 16rem;
 	overflow: auto;
 	padding: var(--size-4-3);
 	border: 1px solid var(--background-modifier-border);

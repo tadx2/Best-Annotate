@@ -37,10 +37,12 @@ type AnnotateBlockNumberKey =
 	| 'fontSize'
 	| 'paragraphMaxWidth'
 	| 'lineHeight'
+	| 'paragraphMarginAll'
 	| 'paragraphMarginTop'
 	| 'paragraphMarginRight'
 	| 'paragraphMarginBottom'
 	| 'paragraphMarginLeft'
+	| 'paragraphPaddingAll'
 	| 'paragraphPaddingTop'
 	| 'paragraphPaddingRight'
 	| 'paragraphPaddingBottom'
@@ -52,6 +54,20 @@ type AnnotateBlockColorKey = 'textColor' | 'borderColor';
 type AnnotateBlockAlignmentKey =
 	| 'textAlignment'
 	| 'paragraphAlignment';
+
+const MARGIN_SIDE_KEYS = [
+	'paragraphMarginTop',
+	'paragraphMarginRight',
+	'paragraphMarginBottom',
+	'paragraphMarginLeft',
+] as const;
+
+const PADDING_SIDE_KEYS = [
+	'paragraphPaddingTop',
+	'paragraphPaddingRight',
+	'paragraphPaddingBottom',
+	'paragraphPaddingLeft',
+] as const;
 
 interface AnnotateBlockAppearanceSettingSpec {
 	section: AnnotateBlockAppearanceSection;
@@ -110,6 +126,17 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 	},
 	{
 		section: 'Margin',
+		name: 'All sides',
+		desc: 'Set the same margin on all four sides.',
+		key: 'paragraphMarginAll',
+		initialValue: 8,
+		min: 0,
+		max: 200,
+		step: 1,
+		unit: 'px',
+	},
+	{
+		section: 'Margin',
 		name: 'Margin top',
 		desc: 'Override the spacing above the paragraph.',
 		key: 'paragraphMarginTop',
@@ -146,6 +173,17 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		name: 'Margin left',
 		desc: 'Override the spacing to the left of the paragraph.',
 		key: 'paragraphMarginLeft',
+		initialValue: 8,
+		min: 0,
+		max: 200,
+		step: 1,
+		unit: 'px',
+	},
+	{
+		section: 'Padding',
+		name: 'All sides',
+		desc: 'Set the same padding on all four sides.',
+		key: 'paragraphPaddingAll',
 		initialValue: 8,
 		min: 0,
 		max: 200,
@@ -238,6 +276,17 @@ export function renderAnnotateBlockAppearanceSettings(
 	options: AnnotateBlockAppearanceSettingsOptions,
 ) {
 	let refreshAlignmentState: () => void = () => undefined;
+	const numberSettingRefreshers = new Map<
+		AnnotateBlockNumberKey,
+		() => void
+	>();
+	const onNumberOverrideChange = (
+		key: AnnotateBlockNumberKey,
+		enabled: boolean,
+	) => {
+		applySpacingOverrideExclusivity(appearance, key, enabled);
+		for (const refresh of numberSettingRefreshers.values()) refresh();
+	};
 	for (const section of ANNOTATE_BLOCK_APPEARANCE_SECTIONS) {
 		const sectionEl = container.createDiv(
 			'ba-annotate-block-style-section',
@@ -253,13 +302,15 @@ export function renderAnnotateBlockAppearanceSettings(
 			const setting = new Setting(sectionEl)
 				.setName(spec.name)
 				.setDesc(spec.desc);
-			renderNumberSetting(
+			const refresh = renderNumberSetting(
 				setting,
 				appearance,
 				spec,
 				options.onChange,
 				() => refreshAlignmentState(),
+				onNumberOverrideChange,
 			);
+			numberSettingRefreshers.set(spec.key, refresh);
 		}
 		for (const spec of ANNOTATE_BLOCK_COLOR_SETTING_SPECS) {
 			if (spec.section !== section) continue;
@@ -309,6 +360,17 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 	options: AnnotateBlockAppearanceSettingsOptions,
 ): SettingDefinitionGroup[] {
 	let refreshAlignmentState: () => void = () => undefined;
+	const numberSettingRefreshers = new Map<
+		AnnotateBlockNumberKey,
+		() => void
+	>();
+	const onNumberOverrideChange = (
+		key: AnnotateBlockNumberKey,
+		enabled: boolean,
+	) => {
+		applySpacingOverrideExclusivity(appearance, key, enabled);
+		for (const refresh of numberSettingRefreshers.values()) refresh();
+	};
 
 	return ANNOTATE_BLOCK_APPEARANCE_SECTIONS.map((section) => {
 		const items: SettingDefinition[] = [
@@ -319,13 +381,15 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 				name: spec.name,
 				desc: spec.desc,
 				render: (setting: Setting) => {
-					renderNumberSetting(
+					const refresh = renderNumberSetting(
 						setting,
 						appearance,
 						spec,
 						options.onChange,
 						() => refreshAlignmentState(),
+						onNumberOverrideChange,
 					);
+					numberSettingRefreshers.set(spec.key, refresh);
 				},
 			})),
 			...ANNOTATE_BLOCK_COLOR_SETTING_SPECS.filter(
@@ -388,10 +452,15 @@ function renderNumberSetting(
 	spec: AnnotateBlockAppearanceSettingSpec,
 	onChange: () => void | Promise<void>,
 	onMaxWidthChange: () => void,
+	onOverrideChange: (
+		key: AnnotateBlockNumberKey,
+		enabled: boolean,
+	) => void,
 ) {
 	const hasOverride = appearance[spec.key] !== null;
 	let slider: SliderComponent | null = null;
 	let numberInput: TextComponent | null = null;
+	let toggle: ToggleComponent | null = null;
 
 	setting.addText((component) => {
 			numberInput = component;
@@ -440,13 +509,21 @@ function renderNumberSetting(
 				});
 			component.sliderEl.nextElementSibling?.remove();
 		})
-		.addToggle((toggle) => {
-			toggle.setValue(hasOverride).onChange((enabled) => {
-				slider?.setDisabled(!enabled);
-				if (numberInput) numberInput.inputEl.disabled = !enabled;
-				appearance[spec.key] = enabled
-					? getNumberInputValue(numberInput, spec.initialValue)
+		.addToggle((component) => {
+			toggle = component;
+			component.setValue(hasOverride).onChange((enabled) => {
+				const linkedValue = enabled
+					? getLinkedSpacingValue(appearance, spec.key)
 					: null;
+				const value =
+					linkedValue ??
+					getNumberInputValue(numberInput, spec.initialValue);
+				if (enabled) {
+					numberInput?.setValue(formatNumberValue(value));
+					slider?.setValue(value);
+				}
+				appearance[spec.key] = enabled ? value : null;
+				onOverrideChange(spec.key, enabled);
 				if (spec.key === 'paragraphMaxWidth') {
 					if (!enabled) appearance.paragraphAlignment = null;
 					onMaxWidthChange();
@@ -454,6 +531,20 @@ function renderNumberSetting(
 				return onChange();
 			});
 		});
+
+	const refresh = () => {
+		const value = appearance[spec.key];
+		const enabled = value !== null;
+		slider?.setDisabled(!enabled);
+		if (numberInput) numberInput.inputEl.disabled = !enabled;
+		toggle?.setValue(enabled);
+		if (value !== null) {
+			numberInput?.setValue(formatNumberValue(value));
+			slider?.setValue(value);
+		}
+	};
+	refresh();
+	return refresh;
 }
 
 function renderColorSetting(
@@ -510,6 +601,67 @@ function parseNumberInputValue(input: TextComponent | null) {
 	if (!rawValue) return null;
 	const value = Number(rawValue);
 	return Number.isFinite(value) ? value : null;
+}
+
+function getLinkedSpacingValue(
+	appearance: AnnotateBlockAppearance,
+	key: AnnotateBlockNumberKey,
+) {
+	if (key === 'paragraphMarginAll') {
+		return getFirstSpacingValue(appearance, MARGIN_SIDE_KEYS);
+	}
+	if (isSpacingSideKey(key, MARGIN_SIDE_KEYS)) {
+		return appearance.paragraphMarginAll;
+	}
+	if (key === 'paragraphPaddingAll') {
+		return getFirstSpacingValue(appearance, PADDING_SIDE_KEYS);
+	}
+	if (isSpacingSideKey(key, PADDING_SIDE_KEYS)) {
+		return appearance.paragraphPaddingAll;
+	}
+	return null;
+}
+
+function applySpacingOverrideExclusivity(
+	appearance: AnnotateBlockAppearance,
+	key: AnnotateBlockNumberKey,
+	enabled: boolean,
+) {
+	if (!enabled) return;
+	if (key === 'paragraphMarginAll') {
+		clearSpacingSides(appearance, MARGIN_SIDE_KEYS);
+	} else if (isSpacingSideKey(key, MARGIN_SIDE_KEYS)) {
+		appearance.paragraphMarginAll = null;
+	} else if (key === 'paragraphPaddingAll') {
+		clearSpacingSides(appearance, PADDING_SIDE_KEYS);
+	} else if (isSpacingSideKey(key, PADDING_SIDE_KEYS)) {
+		appearance.paragraphPaddingAll = null;
+	}
+}
+
+function getFirstSpacingValue(
+	appearance: AnnotateBlockAppearance,
+	keys: readonly AnnotateBlockNumberKey[],
+) {
+	for (const key of keys) {
+		const value = appearance[key];
+		if (value !== null) return value;
+	}
+	return null;
+}
+
+function clearSpacingSides(
+	appearance: AnnotateBlockAppearance,
+	keys: readonly AnnotateBlockNumberKey[],
+) {
+	for (const key of keys) appearance[key] = null;
+}
+
+function isSpacingSideKey(
+	key: AnnotateBlockNumberKey,
+	keys: readonly AnnotateBlockNumberKey[],
+) {
+	return keys.includes(key);
 }
 
 function renderTextAlignmentSetting(

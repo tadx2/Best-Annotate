@@ -5,10 +5,12 @@ export interface AnnotateBlockAppearance {
 	textColor: string | null;
 	paragraphMaxWidth: number | null;
 	lineHeight: number | null;
+	paragraphMarginAll: number | null;
 	paragraphMarginTop: number | null;
 	paragraphMarginRight: number | null;
 	paragraphMarginBottom: number | null;
 	paragraphMarginLeft: number | null;
+	paragraphPaddingAll: number | null;
 	paragraphPaddingTop: number | null;
 	paragraphPaddingRight: number | null;
 	paragraphPaddingBottom: number | null;

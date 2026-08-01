@@ -11,10 +11,12 @@ const BLOCK_TEXT_COLOR_ATTRIBUTE = 'data-ba-block-text-color';
 const BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE =
 	'data-ba-block-paragraph-max-width';
 const BLOCK_LINE_HEIGHT_ATTRIBUTE = 'data-ba-block-line-height';
+const BLOCK_MARGIN_ALL_ATTRIBUTE = 'data-ba-block-margin';
 const BLOCK_MARGIN_TOP_ATTRIBUTE = 'data-ba-block-margin-top';
 const BLOCK_MARGIN_RIGHT_ATTRIBUTE = 'data-ba-block-margin-right';
 const BLOCK_MARGIN_BOTTOM_ATTRIBUTE = 'data-ba-block-margin-bottom';
 const BLOCK_MARGIN_LEFT_ATTRIBUTE = 'data-ba-block-margin-left';
+const BLOCK_PADDING_ALL_ATTRIBUTE = 'data-ba-block-padding';
 const BLOCK_PADDING_TOP_ATTRIBUTE = 'data-ba-block-padding-top';
 const BLOCK_PADDING_RIGHT_ATTRIBUTE = 'data-ba-block-padding-right';
 const BLOCK_PADDING_BOTTOM_ATTRIBUTE = 'data-ba-block-padding-bottom';
@@ -104,6 +106,13 @@ export function applyAnnotateBlockAppearance(
 	applyOptionalPixelStyle(
 		element,
 		styles,
+		BLOCK_MARGIN_ALL_ATTRIBUTE,
+		'margin',
+		appearance.paragraphMarginAll,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
 		BLOCK_MARGIN_TOP_ATTRIBUTE,
 		'margin-top',
 		appearance.paragraphMarginTop,
@@ -128,6 +137,13 @@ export function applyAnnotateBlockAppearance(
 		BLOCK_MARGIN_LEFT_ATTRIBUTE,
 		'margin-left',
 		appearance.paragraphMarginLeft,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_PADDING_ALL_ATTRIBUTE,
+		'padding',
+		appearance.paragraphPaddingAll,
 	);
 	applyOptionalPixelStyle(
 		element,
@@ -409,6 +425,10 @@ function readAnnotateBlockAppearance(
 			annotate,
 			BLOCK_LINE_HEIGHT_ATTRIBUTE,
 		),
+		paragraphMarginAll: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_MARGIN_ALL_ATTRIBUTE,
+		),
 		paragraphMarginTop: getOptionalNumberAttribute(
 			annotate,
 			BLOCK_MARGIN_TOP_ATTRIBUTE,
@@ -424,6 +444,10 @@ function readAnnotateBlockAppearance(
 		paragraphMarginLeft: getOptionalNumberAttribute(
 			annotate,
 			BLOCK_MARGIN_LEFT_ATTRIBUTE,
+		),
+		paragraphPaddingAll: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_PADDING_ALL_ATTRIBUTE,
 		),
 		paragraphPaddingTop: getOptionalNumberAttribute(
 			annotate,
