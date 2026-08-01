@@ -6,7 +6,10 @@ import {
 	SettingDefinitionItem,
 	SettingDefinitionList,
 } from 'obsidian';
+import { createDefaultAnnotateBlockAppearance } from './annotate-block/defaults';
+import { AnnotateBlockAppearance } from './annotate-block/types';
 import { createFastGroupPreset, FastGroupPreset } from './fast-group';
+import { createAnnotateBlockAppearanceSettingDefinition } from './ui/annotate-block-appearance-settings';
 import { createTextGroupAppearanceSettingDefinitions } from './ui/text-group-appearance-settings';
 
 const DEFAULT_TEST_TEXT =
@@ -16,6 +19,7 @@ export interface BetterAnnotateSettings {
 	devMode: boolean;
 	addTestTextOnCreate: boolean;
 	testText: string;
+	defaultAnnotateAppearance: AnnotateBlockAppearance;
 	fastGroupPresets: FastGroupPreset[];
 }
 
@@ -23,6 +27,7 @@ export const DEFAULT_SETTINGS: BetterAnnotateSettings = {
 	devMode: true,
 	addTestTextOnCreate: true,
 	testText: DEFAULT_TEST_TEXT,
+	defaultAnnotateAppearance: createDefaultAnnotateBlockAppearance(),
 	fastGroupPresets: [],
 };
 
@@ -59,6 +64,10 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 				},
 			},
 			this.createTestTextDefinition(),
+			createAnnotateBlockAppearanceSettingDefinition(
+				this.plugin.settings.defaultAnnotateAppearance,
+				{ onChange: () => this.plugin.saveSettings() },
+			),
 			this.createFastGroupDefinition(),
 		];
 	}

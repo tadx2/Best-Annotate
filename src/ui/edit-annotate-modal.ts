@@ -4,8 +4,11 @@ import {
 	Modal,
 	Notice,
 } from 'obsidian';
+import { cloneAnnotateBlockAppearance } from '../annotate-block/defaults';
+import { AnnotateBlockAppearance } from '../annotate-block/types';
 import { FastGroupPreset } from '../fast-group';
 import {
+	applyAnnotateBlockAppearance,
 	appendAnnotatedText,
 	createTextGroupElement,
 } from '../text-group/dom';
@@ -14,6 +17,7 @@ import {
 	createDefaultTextGroupAppearance,
 } from '../text-group/defaults';
 import { TextGroup } from '../text-group/types';
+import { renderAnnotateBlockAppearanceSettings } from './annotate-block-appearance-settings';
 import { CreateAnnotateModal } from './create-annotate-modal';
 import { SegmentSelector } from './segment-selector';
 import { renderTextGroupAppearanceSettings } from './text-group-appearance-settings';
@@ -23,14 +27,20 @@ const FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE = 'data-ba-preview-group-index';
 export interface EditAnnotateModalOptions {
 	initialText?: string;
 	initialTextGroups?: TextGroup[];
+	initialAppearance: AnnotateBlockAppearance;
 	fastGroupPresets?: FastGroupPreset[];
-	onSave: (text: string, textGroups: TextGroup[]) => void;
+	onSave: (
+		text: string,
+		textGroups: TextGroup[],
+		appearance: AnnotateBlockAppearance,
+	) => void;
 	onDelete?: () => void;
 }
 
 export class EditAnnotateModal extends Modal {
 	private text: string;
 	private textGroups: TextGroup[];
+	private appearance: AnnotateBlockAppearance;
 	private segmentsEl!: HTMLElement;
 	private segmentSelector!: SegmentSelector;
 	private textGroupPreviewEl!: HTMLElement;
@@ -56,6 +66,9 @@ export class EditAnnotateModal extends Modal {
 			...group,
 			appearance: cloneTextGroupAppearance(group.appearance),
 		}));
+		this.appearance = cloneAnnotateBlockAppearance(
+			options.initialAppearance,
+		);
 	}
 
 	onOpen() {
@@ -72,7 +85,10 @@ export class EditAnnotateModal extends Modal {
 			cls: 'ba-annotate-section-label',
 			text: 'Final preview',
 		});
-		new ButtonComponent(finalPreviewHeader)
+		const finalPreviewActions = finalPreviewHeader.createDiv(
+			'ba-annotate-section-actions',
+		);
+		new ButtonComponent(finalPreviewActions)
 			.setButtonText('Modify text')
 			.onClick(() => this.modifyText());
 		this.finalPreviewEl = finalPreviewSection.createDiv(
@@ -88,6 +104,18 @@ export class EditAnnotateModal extends Modal {
 			event.preventDefault();
 			this.selectFinalPreviewGroup(event.target);
 		});
+		finalPreviewSection.createDiv({
+			cls: 'ba-annotate-section-label',
+			text: 'Paragraph style',
+		});
+		const annotateStyleSettingsEl = finalPreviewSection.createDiv(
+			'ba-annotate-block-style-settings',
+		);
+		renderAnnotateBlockAppearanceSettings(
+			annotateStyleSettingsEl,
+			this.appearance,
+			{ onChange: () => this.renderFinalPreview() },
+		);
 		const segmentsColumn = layout.createDiv('ba-annotate-column');
 		const groupColumn = layout.createDiv('ba-annotate-column');
 
@@ -262,8 +290,12 @@ export class EditAnnotateModal extends Modal {
 
 	private renderFinalPreview() {
 		this.finalPreviewEl.empty();
+		const previewBlock = this.finalPreviewEl.createDiv(
+			'ba-annotate-final-preview-block',
+		);
+		applyAnnotateBlockAppearance(previewBlock, this.appearance);
 		appendAnnotatedText(
-			this.finalPreviewEl,
+			previewBlock,
 			this.text,
 			this.textGroups,
 			{
@@ -480,7 +512,11 @@ export class EditAnnotateModal extends Modal {
 			return;
 		}
 
-		this.options.onSave(this.text, this.textGroups);
+		this.options.onSave(
+			this.text,
+			this.textGroups,
+			cloneAnnotateBlockAppearance(this.appearance),
+		);
 		this.close();
 	}
 

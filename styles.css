@@ -175,12 +175,16 @@
 .ba-text-group rt {
 	color: var(--ba-annotate-color);
 	font-size: var(--ba-annotate-font-size);
+	white-space: nowrap;
+	word-break: keep-all;
+	overflow-wrap: normal;
 	position: relative;
 	left: var(--ba-annotate-offset-x);
 	top: var(--ba-annotate-offset-y);
 }
 
-.ba-text-group[data-ba-annotate-position='over'] {
+.ba-text-group[data-ba-annotate-position='over']
+	.ba-text-group-annotation {
 	ruby-position: over;
 }
 
@@ -188,7 +192,8 @@
 	padding-bottom: var(--ba-annotate-spacing);
 }
 
-.ba-text-group[data-ba-annotate-position='under'] {
+.ba-text-group[data-ba-annotate-position='under']
+	.ba-text-group-annotation {
 	ruby-position: under;
 }
 
@@ -200,7 +205,8 @@
 	display: none;
 }
 
-.ba-text-group[data-ba-annotate-compact='true'] {
+.ba-text-group[data-ba-annotate-compact='true']
+	.ba-text-group-annotation {
 	ruby-align: center;
 }
 
@@ -208,7 +214,8 @@
 	line-height: 1;
 }
 
-.ba-text-group[data-ba-annotate-compact='false'] {
+.ba-text-group[data-ba-annotate-compact='false']
+	.ba-text-group-annotation {
 	ruby-align: space-around;
 }
 

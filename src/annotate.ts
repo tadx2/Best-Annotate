@@ -1,4 +1,6 @@
 import { Editor, EditorPosition, MarkdownView, Notice, Plugin } from 'obsidian';
+import { cloneAnnotateBlockAppearance } from './annotate-block/defaults';
+import { AnnotateBlockAppearance } from './annotate-block/types';
 import { BetterAnnotateSettings } from './settings';
 import {
 	ANNOTATE_ID_ATTRIBUTE,
@@ -21,13 +23,22 @@ export function registerAnnotateMenu(
 				item.setTitle('Add annotate')
 					.setIcon('message-square-plus')
 					.onClick(() => {
+						const appearance = cloneAnnotateBlockAppearance(
+							settings.defaultAnnotateAppearance,
+						);
 						new CreateAnnotateModal(plugin.app, {
 							initialText: settings.devMode &&
 								settings.addTestTextOnCreate
 								? settings.testText
 								: '',
 							onSave: (text) => {
-								const id = insertAnnotate(editor, cursor, text, []);
+								const id = insertAnnotate(
+									editor,
+									cursor,
+									text,
+									[],
+									appearance,
+								);
 								openEditAnnotateModal(
 									plugin,
 									settings,
@@ -35,6 +46,7 @@ export function registerAnnotateMenu(
 									id,
 									text,
 									[],
+									appearance,
 								);
 							},
 						}).open();
@@ -64,6 +76,7 @@ export function registerAnnotateMenu(
 			id,
 			content.text,
 			content.textGroups,
+			content.appearance,
 		);
 	});
 }
@@ -75,13 +88,21 @@ function openEditAnnotateModal(
 	id: string,
 	text: string,
 	textGroups: TextGroup[],
+	appearance: AnnotateBlockAppearance,
 ) {
 	new EditAnnotateModal(plugin.app, {
 		initialText: text,
 		initialTextGroups: textGroups,
+		initialAppearance: appearance,
 		fastGroupPresets: settings.fastGroupPresets,
-		onSave: (updatedText, updatedTextGroups) => {
-			updateAnnotate(editor, id, updatedText, updatedTextGroups);
+		onSave: (updatedText, updatedTextGroups, updatedAppearance) => {
+			updateAnnotate(
+				editor,
+				id,
+				updatedText,
+				updatedTextGroups,
+				updatedAppearance,
+			);
 		},
 		onDelete: () => deleteAnnotate(editor, id),
 	}).open();
@@ -92,10 +113,11 @@ function insertAnnotate(
 	cursor: EditorPosition,
 	text: string,
 	textGroups: TextGroup[],
+	appearance: AnnotateBlockAppearance,
 ) {
 	const prefix = cursor.ch > 0 ? '\n\n' : '';
 	const id = crypto.randomUUID();
-	const block = createAnnotateBlock(id, text, textGroups);
+	const block = createAnnotateBlock(id, text, textGroups, appearance);
 	// 在 div 后保留一个空行，并把光标移动过去，以触发 Live Preview 渲染。
 	const insertion = `${prefix}${block}\n\n`;
 
@@ -127,6 +149,7 @@ function updateAnnotate(
 	id: string,
 	text: string,
 	textGroups: TextGroup[],
+	appearance: AnnotateBlockAppearance,
 ) {
 	const source = editor.getValue();
 	const range = findAnnotateRange(source, id);
@@ -136,7 +159,12 @@ function updateAnnotate(
 		return;
 	}
 
-	const replacement = createAnnotateBlock(id, text, textGroups);
+	const replacement = createAnnotateBlock(
+		id,
+		text,
+		textGroups,
+		appearance,
+	);
 	const from = editor.offsetToPos(range.start);
 	const to = editor.offsetToPos(range.end);
 	const replacementWithNewlines = `${replacement}\n\n`;
@@ -169,8 +197,15 @@ function createAnnotateBlock(
 	id: string,
 	text: string,
 	textGroups: TextGroup[],
+	appearance: AnnotateBlockAppearance,
 ) {
-	return createAnnotateElement(document, id, text, textGroups).outerHTML;
+	return createAnnotateElement(
+		document,
+		id,
+		text,
+		textGroups,
+		appearance,
+	).outerHTML;
 }
 
 function offsetPosition(
