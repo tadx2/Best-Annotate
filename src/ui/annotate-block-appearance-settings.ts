@@ -246,7 +246,7 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 
 	return {
 		type: 'group',
-		heading: 'Paragraph style for new annotates',
+		heading: 'Paragraph settings for new annotates',
 		items: [
 			...ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS.map((spec) => ({
 				name: spec.name,

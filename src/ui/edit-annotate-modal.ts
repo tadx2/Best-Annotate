@@ -3,6 +3,8 @@ import {
 	ButtonComponent,
 	Modal,
 	Notice,
+	Setting,
+	TextAreaComponent,
 } from 'obsidian';
 import { cloneAnnotateBlockAppearance } from '../annotate-block/defaults';
 import { AnnotateBlockAppearance } from '../annotate-block/types';
@@ -18,7 +20,6 @@ import {
 } from '../text-group/defaults';
 import { TextGroup } from '../text-group/types';
 import { renderAnnotateBlockAppearanceSettings } from './annotate-block-appearance-settings';
-import { CreateAnnotateModal } from './create-annotate-modal';
 import { SegmentSelector } from './segment-selector';
 import { renderTextGroupAppearanceSettings } from './text-group-appearance-settings';
 
@@ -55,6 +56,9 @@ export class EditAnnotateModal extends Modal {
 	private ungroupAllTextButton!: ButtonComponent;
 	private clearTextGroupStyleButton!: ButtonComponent;
 	private clearTextGroupAllButton!: ButtonComponent;
+	private paragraphTextArea!: TextAreaComponent;
+	private paragraphTextButton!: ButtonComponent;
+	private isParagraphTextEditing = false;
 
 	constructor(
 		app: App,
@@ -85,12 +89,6 @@ export class EditAnnotateModal extends Modal {
 			cls: 'ba-annotate-section-label',
 			text: 'Final preview',
 		});
-		const finalPreviewActions = finalPreviewHeader.createDiv(
-			'ba-annotate-section-actions',
-		);
-		new ButtonComponent(finalPreviewActions)
-			.setButtonText('Modify text')
-			.onClick(() => this.modifyText());
 		this.finalPreviewEl = finalPreviewSection.createDiv(
 			'ba-annotate-final-preview',
 		);
@@ -104,13 +102,36 @@ export class EditAnnotateModal extends Modal {
 			event.preventDefault();
 			this.selectFinalPreviewGroup(event.target);
 		});
-		finalPreviewSection.createDiv({
+		const paragraphSettingHeader = finalPreviewSection.createDiv(
+			'ba-annotate-section-header',
+		);
+		paragraphSettingHeader.createDiv({
 			cls: 'ba-annotate-section-label',
-			text: 'Paragraph style',
+			text: 'Paragraph Setting',
 		});
 		const annotateStyleSettingsEl = finalPreviewSection.createDiv(
 			'ba-annotate-block-style-settings',
 		);
+		const textContentSetting = new Setting(annotateStyleSettingsEl)
+			.setName('Text content')
+			.setDesc(
+				'Editing and saving the text content will reset all text groups.',
+			);
+		textContentSetting.nameEl.setText(['Text', 'Content'].join(' '));
+		this.paragraphTextButton = new ButtonComponent(
+			textContentSetting.controlEl,
+		)
+			.setButtonText('Edit')
+			.onClick(() => this.toggleParagraphTextEditing());
+		this.paragraphTextArea = new TextAreaComponent(
+			annotateStyleSettingsEl,
+		)
+			.setPlaceholder('Enter annotate text')
+			.setValue(this.text);
+		this.paragraphTextArea.inputEl.rows = 5;
+		this.paragraphTextArea.inputEl.readOnly = true;
+		this.paragraphTextArea.inputEl.hidden = true;
+		this.paragraphTextArea.inputEl.addClass('ba-annotate-textarea');
 		renderAnnotateBlockAppearanceSettings(
 			annotateStyleSettingsEl,
 			this.appearance,
@@ -238,18 +259,46 @@ export class EditAnnotateModal extends Modal {
 		this.contentEl.empty();
 	}
 
-	private modifyText() {
-		new Notice('Modifying the text will delete all existing groups.');
-		new CreateAnnotateModal(this.app, {
-			initialText: this.text,
-			onSave: (text) => {
-				this.text = text;
-				this.textGroups = [];
-				this.segmentSelector.setData(this.text, this.textGroups);
-				this.renderFinalPreview();
-				new Notice('All text groups were deleted.');
-			},
-		}).open();
+	private toggleParagraphTextEditing() {
+		if (!this.isParagraphTextEditing) {
+			this.isParagraphTextEditing = true;
+			this.paragraphTextArea.inputEl.readOnly = false;
+			this.paragraphTextArea.inputEl.hidden = false;
+			this.paragraphTextButton.setButtonText('Save');
+			if (this.textGroups.length > 0) {
+				new Notice(
+					'Modifying the text will delete all existing groups.',
+				);
+			}
+			this.paragraphTextArea.inputEl.focus();
+			return;
+		}
+
+		this.saveParagraphText();
+	}
+
+	private saveParagraphText() {
+		const text = this.paragraphTextArea.getValue();
+		if (!text.trim()) {
+			new Notice('Enter some text first.');
+			return false;
+		}
+
+		const changed = text !== this.text;
+		const deletedGroups = changed && this.textGroups.length > 0;
+		if (changed) {
+			this.text = text;
+			this.textGroups = [];
+			this.segmentSelector.setData(this.text, this.textGroups);
+			this.renderFinalPreview();
+		}
+
+		this.isParagraphTextEditing = false;
+		this.paragraphTextArea.inputEl.readOnly = true;
+		this.paragraphTextArea.inputEl.hidden = true;
+		this.paragraphTextButton.setButtonText('Edit');
+		if (deletedGroups) new Notice('All text groups were deleted.');
+		return true;
 	}
 
 	private renderSelectedTextGroup() {
@@ -507,6 +556,12 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private save() {
+		if (
+			this.isParagraphTextEditing &&
+			!this.saveParagraphText()
+		) {
+			return;
+		}
 		if (!this.text.trim()) {
 			new Notice('Enter some text first.');
 			return;
