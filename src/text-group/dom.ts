@@ -8,6 +8,7 @@ export const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
 
 const BLOCK_FONT_SIZE_ATTRIBUTE = 'data-ba-block-font-size';
 const BLOCK_TEXT_COLOR_ATTRIBUTE = 'data-ba-block-text-color';
+const BLOCK_BACKGROUND_COLOR_ATTRIBUTE = 'data-ba-block-background-color';
 const BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE =
 	'data-ba-block-paragraph-max-width';
 const BLOCK_LINE_HEIGHT_ATTRIBUTE = 'data-ba-block-line-height';
@@ -86,6 +87,13 @@ export function applyAnnotateBlockAppearance(
 	if (appearance.textColor !== null) {
 		element.setAttribute(BLOCK_TEXT_COLOR_ATTRIBUTE, appearance.textColor);
 		styles.color = appearance.textColor;
+	}
+	if (appearance.paragraphBackgroundColor !== null) {
+		element.setAttribute(
+			BLOCK_BACKGROUND_COLOR_ATTRIBUTE,
+			appearance.paragraphBackgroundColor,
+		);
+		styles['background-color'] = appearance.paragraphBackgroundColor;
 	}
 	if (appearance.paragraphMaxWidth !== null) {
 		element.setAttribute(
@@ -417,6 +425,9 @@ function readAnnotateBlockAppearance(
 			BLOCK_FONT_SIZE_ATTRIBUTE,
 		),
 		textColor: annotate.getAttribute(BLOCK_TEXT_COLOR_ATTRIBUTE),
+		paragraphBackgroundColor: annotate.getAttribute(
+			BLOCK_BACKGROUND_COLOR_ATTRIBUTE,
+		),
 		paragraphMaxWidth: getOptionalNumberAttribute(
 			annotate,
 			BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE,

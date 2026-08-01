@@ -49,7 +49,10 @@ type AnnotateBlockNumberKey =
 	| 'paragraphPaddingLeft'
 	| 'borderSize';
 
-type AnnotateBlockColorKey = 'textColor' | 'borderColor';
+type AnnotateBlockColorKey =
+	| 'textColor'
+	| 'paragraphBackgroundColor'
+	| 'borderColor';
 
 type AnnotateBlockAlignmentKey =
 	| 'textAlignment'
@@ -248,6 +251,12 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 ];
 
 const ANNOTATE_BLOCK_COLOR_SETTING_SPECS: AnnotateBlockColorSettingSpec[] = [
+	{
+		section: 'Paragraph',
+		name: 'Background color',
+		desc: 'Override the inherited paragraph background color.',
+		key: 'paragraphBackgroundColor',
+	},
 	{
 		section: 'Text',
 		name: 'Text color',

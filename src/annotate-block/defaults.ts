@@ -3,6 +3,7 @@ import { AnnotateBlockAppearance } from './types';
 export const DEFAULT_ANNOTATE_BLOCK_APPEARANCE: AnnotateBlockAppearance = {
 	fontSize: null,
 	textColor: null,
+	paragraphBackgroundColor: null,
 	paragraphMaxWidth: null,
 	lineHeight: null,
 	paragraphMarginAll: null,

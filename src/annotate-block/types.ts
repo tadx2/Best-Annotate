@@ -3,6 +3,7 @@ export type AnnotateBlockAlignment = 'left' | 'center' | 'right';
 export interface AnnotateBlockAppearance {
 	fontSize: number | null;
 	textColor: string | null;
+	paragraphBackgroundColor: string | null;
 	paragraphMaxWidth: number | null;
 	lineHeight: number | null;
 	paragraphMarginAll: number | null;
