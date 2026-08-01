@@ -68,6 +68,25 @@
 	width: min(24rem, 40vw);
 }
 
+.ba-annotate-block-style-settings .slider-value {
+	display: none;
+}
+
+.ba-annotate-number-input {
+	width: 5.5rem;
+}
+
+.ba-annotate-number-unit {
+	min-width: 1.5rem;
+	color: var(--text-muted);
+}
+
+.ba-annotate-alignment-button.is-active:not(:disabled),
+.ba-annotate-alignment-button.is-active:not(:disabled):hover {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
 .ba-annotate-section-label {
 	font-weight: var(--font-semibold);
 	margin: var(--size-4-3) 0 var(--size-4-2);

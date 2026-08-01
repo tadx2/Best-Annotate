@@ -1,9 +1,10 @@
 import {
+	ButtonComponent,
 	ColorComponent,
-	DropdownComponent,
 	Setting,
 	SettingDefinitionGroup,
 	SliderComponent,
+	TextComponent,
 	ToggleComponent,
 } from 'obsidian';
 import {
@@ -43,7 +44,7 @@ interface AnnotateBlockAppearanceSettingSpec {
 	min: number;
 	max: number;
 	step: number;
-	format: (value: number) => string;
+	unit: string;
 }
 
 interface AnnotateBlockColorSettingSpec {
@@ -63,7 +64,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 8,
 		max: 72,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Paragraph max width',
@@ -73,7 +74,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 160,
 		max: 2000,
 		step: 20,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Line height',
@@ -83,7 +84,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0.8,
 		max: 5,
 		step: 0.1,
-		format: (value) => value.toFixed(1),
+		unit: '×',
 	},
 	{
 		name: 'Margin top',
@@ -93,7 +94,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Margin right',
@@ -103,7 +104,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Margin bottom',
@@ -113,7 +114,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Margin left',
@@ -123,7 +124,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Padding top',
@@ -133,7 +134,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Padding right',
@@ -143,7 +144,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Padding bottom',
@@ -153,7 +154,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Padding left',
@@ -163,7 +164,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0,
 		max: 200,
 		step: 1,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 	{
 		name: 'Border size',
@@ -173,7 +174,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		min: 0.5,
 		max: 20,
 		step: 0.5,
-		format: (value) => `${value}px`,
+		unit: 'px',
 	},
 ];
 
@@ -218,17 +219,16 @@ export function renderAnnotateBlockAppearanceSettings(
 	const textAlignmentSetting = new Setting(container)
 		.setName('Text alignment')
 		.setDesc('Override the alignment of text inside the paragraph.');
-	renderAlignmentSetting(
+	renderTextAlignmentSetting(
 		textAlignmentSetting,
 		appearance,
-		'textAlignment',
 		options.onChange,
 	);
 
 	const paragraphAlignmentSetting = new Setting(container)
 		.setName('Paragraph alignment')
 		.setDesc('Align the paragraph block when a maximum width is set.');
-	refreshAlignmentState = renderAlignmentSetting(
+	refreshAlignmentState = renderIconAlignmentSetting(
 		paragraphAlignmentSetting,
 		appearance,
 		'paragraphAlignment',
@@ -277,10 +277,9 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 				name: 'Text alignment',
 				desc: 'Override the alignment of text inside the paragraph.',
 				render: (setting: Setting) => {
-					renderAlignmentSetting(
+					renderTextAlignmentSetting(
 						setting,
 						appearance,
-						'textAlignment',
 						options.onChange,
 					);
 				},
@@ -289,7 +288,7 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 				name: 'Paragraph alignment',
 				desc: 'Align the paragraph block when a maximum width is set.',
 				render: (setting: Setting) => {
-					refreshAlignmentState = renderAlignmentSetting(
+					refreshAlignmentState = renderIconAlignmentSetting(
 						setting,
 						appearance,
 						'paragraphAlignment',
@@ -312,27 +311,61 @@ function renderNumberSetting(
 ) {
 	const hasOverride = appearance[spec.key] !== null;
 	let slider: SliderComponent | null = null;
+	let numberInput: TextComponent | null = null;
 
+	setting.addText((component) => {
+			numberInput = component;
+			component.setValue(
+				formatNumberValue(appearance[spec.key] ?? spec.initialValue),
+			);
+			component.inputEl.type = 'number';
+			component.inputEl.step = 'any';
+			component.inputEl.disabled = !hasOverride;
+			component.inputEl.addClass('ba-annotate-number-input');
+			component.inputEl.addEventListener('change', () => {
+				const value = parseNumberInputValue(component);
+				if (value === null) {
+					component.setValue(
+						formatNumberValue(
+							slider?.getValue() ?? spec.initialValue,
+						),
+					);
+					return;
+				}
+
+				component.setValue(formatNumberValue(value));
+				slider?.setValue(value);
+				if (appearance[spec.key] === null) return;
+				appearance[spec.key] = value;
+				void onChange();
+			});
+		});
+	setting.controlEl.createSpan({
+		cls: 'ba-annotate-number-unit',
+		text: spec.unit,
+	});
 	setting
 		.addSlider((component) => {
 			slider = component;
 			component
 				.setLimits(spec.min, spec.max, spec.step)
 				.setValue(appearance[spec.key] ?? spec.initialValue)
-				.setDisplayFormat(spec.format)
 				.setInstant(true)
 				.setDisabled(!hasOverride)
 				.onChange((value) => {
 					if (appearance[spec.key] === null) return;
 					appearance[spec.key] = value;
+					numberInput?.setValue(formatNumberValue(value));
 					return onChange();
 				});
+			component.sliderEl.nextElementSibling?.remove();
 		})
 		.addToggle((toggle) => {
 			toggle.setValue(hasOverride).onChange((enabled) => {
 				slider?.setDisabled(!enabled);
+				if (numberInput) numberInput.inputEl.disabled = !enabled;
 				appearance[spec.key] = enabled
-					? slider?.getValue() ?? spec.initialValue
+					? getNumberInputValue(numberInput, spec.initialValue)
 					: null;
 				if (spec.key === 'paragraphMaxWidth') {
 					if (!enabled) appearance.paragraphAlignment = null;
@@ -381,58 +414,104 @@ function renderColorSetting(
 		});
 }
 
-function renderAlignmentSetting(
+function formatNumberValue(value: number) {
+	return String(Number(value.toFixed(4)));
+}
+
+function getNumberInputValue(
+	input: TextComponent | null,
+	fallback: number,
+) {
+	return parseNumberInputValue(input) ?? fallback;
+}
+
+function parseNumberInputValue(input: TextComponent | null) {
+	const rawValue = input?.getValue().trim();
+	if (!rawValue) return null;
+	const value = Number(rawValue);
+	return Number.isFinite(value) ? value : null;
+}
+
+function renderTextAlignmentSetting(
+	setting: Setting,
+	appearance: AnnotateBlockAppearance,
+	onChange: () => void | Promise<void>,
+) {
+	return renderIconAlignmentSetting(
+		setting,
+		appearance,
+		'textAlignment',
+		onChange,
+	);
+}
+
+function renderIconAlignmentSetting(
 	setting: Setting,
 	appearance: AnnotateBlockAppearance,
 	key: AnnotateBlockAlignmentKey,
 	onChange: () => void | Promise<void>,
 	isAvailable: () => boolean = () => true,
 ) {
+	let selectedAlignment = appearance[key] ?? 'left';
+	const buttons = new Map<AnnotateBlockAlignment, ButtonComponent>();
 	let toggle: ToggleComponent | null = null;
-	let dropdown: DropdownComponent | null = null;
+	const options: Array<{
+		value: AnnotateBlockAlignment;
+		icon: string;
+		label: string;
+	}> = [
+		{ value: 'left', icon: 'align-left', label: 'Align left' },
+		{ value: 'center', icon: 'align-center', label: 'Align center' },
+		{ value: 'right', icon: 'align-right', label: 'Align right' },
+	];
 
-	setting
-		.addDropdown((component) => {
-			dropdown = component;
-			component
-				.addOption('left', 'Left')
-				.addOption('center', 'Center')
-				.addOption('right', 'Right')
-				.setValue(appearance[key] ?? 'left')
-				.setDisabled(appearance[key] === null || !isAvailable())
-				.onChange((value) => {
-					if (appearance[key] === null || !isAvailable()) return;
-					appearance[key] = parseAlignment(value);
-					return onChange();
-				});
-		})
-		.addToggle((component) => {
-			toggle = component;
-			component
-				.setValue(appearance[key] !== null)
-				.onChange((enabled) => {
-					if (!isAvailable()) return;
-					dropdown?.setDisabled(!enabled);
-					appearance[key] = enabled
-						? parseAlignment(dropdown?.getValue() ?? 'left')
-						: null;
-					return onChange();
-				});
-		});
-
-	return () => {
+	const updateControls = () => {
 		const available = isAvailable();
-		const hasAlignment = appearance[key] !== null;
+		const enabled = appearance[key] !== null;
 		setting.settingEl.toggleClass(
 			'ba-annotate-setting-disabled',
 			!available,
 		);
-		toggle?.setDisabled(!available).setValue(hasAlignment);
-		dropdown?.setDisabled(!available || !hasAlignment);
+		toggle?.setDisabled(!available).setValue(enabled);
+		for (const [value, button] of buttons) {
+			button.buttonEl.disabled = !available || !enabled;
+			button.buttonEl.toggleClass(
+				'is-active',
+				enabled && value === selectedAlignment,
+			);
+			button.buttonEl.setAttribute(
+				'aria-pressed',
+				String(enabled && value === selectedAlignment),
+			);
+		}
 	};
-}
 
-function parseAlignment(value: string): AnnotateBlockAlignment {
-	if (value === 'center' || value === 'right') return value;
-	return 'left';
+	for (const option of options) {
+		const button = new ButtonComponent(setting.controlEl)
+			.setIcon(option.icon)
+			.setTooltip(option.label)
+			.onClick(() => {
+				if (appearance[key] === null || !isAvailable()) return;
+				selectedAlignment = option.value;
+				appearance[key] = option.value;
+				updateControls();
+				return onChange();
+			});
+		button.buttonEl.addClass('ba-annotate-alignment-button');
+		buttons.set(option.value, button);
+	}
+
+	setting.addToggle((component) => {
+		toggle = component;
+		component
+			.setValue(appearance[key] !== null)
+			.onChange((enabled) => {
+				if (!isAvailable()) return;
+				appearance[key] = enabled ? selectedAlignment : null;
+				updateControls();
+				return onChange();
+			});
+	});
+	updateControls();
+	return updateControls;
 }
