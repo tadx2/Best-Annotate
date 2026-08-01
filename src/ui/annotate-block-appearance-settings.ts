@@ -224,7 +224,7 @@ function renderAlignmentSetting(
 						? parseAlignment(dropdown?.getValue() ?? 'left')
 						: null;
 					return onChange();
-			});
+				});
 		})
 		.addDropdown((component) => {
 			dropdown = component;

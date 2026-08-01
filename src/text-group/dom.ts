@@ -2,7 +2,6 @@ import {
 	AnnotateBlockAlignment,
 	AnnotateBlockAppearance,
 } from '../annotate-block/types';
-import { segmentText } from '../text-segmentation';
 import { TextGroup, TextGroupAppearance } from './types';
 
 export const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
@@ -134,8 +133,6 @@ export function createTextGroupElement(
 	writeAppearanceAttributes(container, appearance);
 
 	if (appearance.annotate) {
-		const firstSegment = segmentText(text)[0];
-		const anchorEnd = firstSegment?.end ?? text.length;
 		const ruby = doc.createElement('ruby');
 		ruby.classList.add('ba-text-group-annotation');
 		setInlineStyles(ruby, {
@@ -144,13 +141,7 @@ export function createTextGroupElement(
 				? 'center'
 				: 'space-around',
 		});
-		ruby.appendChild(
-			createTextGroupBaseElement(
-				doc,
-				appearance,
-				text.slice(0, anchorEnd),
-			),
-		);
+		ruby.appendChild(createTextGroupBaseElement(doc, appearance, text));
 
 		const annotate = doc.createElement('rt');
 		const annotateCssProps: Record<string, string> = {
@@ -179,16 +170,6 @@ export function createTextGroupElement(
 		appendText(annotate, appearance.annotate);
 		ruby.appendChild(annotate);
 		container.appendChild(ruby);
-
-		if (anchorEnd < text.length) {
-			container.appendChild(
-				createTextGroupBaseElement(
-					doc,
-					appearance,
-					text.slice(anchorEnd),
-				),
-			);
-		}
 	} else {
 		container.appendChild(
 			createTextGroupBaseElement(doc, appearance, text),
