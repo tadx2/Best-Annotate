@@ -184,6 +184,34 @@
 	font-size: var(--font-ui-large);
 }
 
+.ba-annotate-preview-modes {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
+.ba-annotate-preview-mode-button.is-active,
+.ba-annotate-preview-mode-button.is-active:hover {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.ba-annotate-preview-mode-button {
+	gap: var(--size-2-2);
+}
+
+.ba-annotate-final-preview.is-html-source {
+	font-size: var(--font-ui-small);
+}
+
+.ba-annotate-final-preview-source {
+	min-width: 0;
+	margin: 0;
+	font-family: var(--font-monospace);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
 .ba-annotate-final-preview-group {
 	cursor: pointer;
 }

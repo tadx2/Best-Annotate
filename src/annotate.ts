@@ -92,6 +92,7 @@ function openEditAnnotateModal(
 	appearance: AnnotateBlockAppearance,
 ) {
 	new EditAnnotateModal(plugin.app, {
+		annotateId: id,
 		initialText: text,
 		initialTextGroups: textGroups,
 		initialAppearance: appearance,

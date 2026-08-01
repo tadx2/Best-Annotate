@@ -11,6 +11,7 @@ import { AnnotateBlockAppearance } from '../annotate-block/types';
 import { createFastGroupPreset, FastGroupPreset } from '../fast-group';
 import {
 	appendAnnotatedText,
+	createAnnotateElement,
 	createAnnotateContentElement,
 	createTextGroupElement,
 } from '../text-group/dom';
@@ -24,6 +25,7 @@ import { SegmentSelector } from './segment-selector';
 import { renderTextGroupAppearanceSettings } from './text-group-appearance-settings';
 
 const FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE = 'data-ba-preview-group-index';
+type FinalPreviewMode = 'render' | 'html';
 let copiedTextGroupAppearance: TextGroupAppearance | null = null;
 
 interface AnnotateTabDefinition<T extends string> {
@@ -93,6 +95,7 @@ function createTabNavigation<T extends string>(
 }
 
 export interface EditAnnotateModalOptions {
+	annotateId?: string;
 	initialText?: string;
 	initialTextGroups?: TextGroup[];
 	initialAppearance: AnnotateBlockAppearance;
@@ -122,6 +125,11 @@ export class EditAnnotateModal extends Modal {
 	// Text Group Preview is temporarily disabled.
 	private groupSettingsEl!: HTMLElement;
 	private finalPreviewEl!: HTMLElement;
+	private finalPreviewMode: FinalPreviewMode = 'render';
+	private readonly finalPreviewModeButtons = new Map<
+		FinalPreviewMode,
+		ButtonComponent
+	>();
 	private selectedTextGroupEl!: HTMLElement;
 	private groupPresetsPanelEl!: HTMLElement;
 	private fastGroupActionsEl!: HTMLElement;
@@ -170,6 +178,22 @@ export class EditAnnotateModal extends Modal {
 			cls: 'ba-annotate-section-label',
 			text: 'Final preview',
 		});
+		const finalPreviewModes = finalPreviewHeader.createDiv(
+			'ba-annotate-preview-modes',
+		);
+		for (const mode of [
+			{ id: 'render', label: 'Render', icon: 'eye' },
+			{ id: 'html', label: 'HTML', icon: 'code-2' },
+		] as const) {
+			const button = new ButtonComponent(finalPreviewModes)
+				.setIcon(mode.icon)
+				.setTooltip(`${mode.label} preview`)
+				.onClick(() => this.setFinalPreviewMode(mode.id));
+			button.buttonEl.createSpan({ text: mode.label });
+			button.buttonEl.addClass('ba-annotate-preview-mode-button');
+			this.finalPreviewModeButtons.set(mode.id, button);
+		}
+		this.updateFinalPreviewModeButtons();
 		this.finalPreviewEl = finalPreviewSection.createDiv(
 			'ba-annotate-final-preview',
 		);
@@ -713,6 +737,25 @@ export class EditAnnotateModal extends Modal {
 
 	private renderFinalPreview() {
 		this.finalPreviewEl.empty();
+		this.finalPreviewEl.toggleClass(
+			'is-html-source',
+			this.finalPreviewMode === 'html',
+		);
+		if (this.finalPreviewMode === 'html') {
+			const source = createAnnotateElement(
+				this.finalPreviewEl.ownerDocument,
+				this.options.annotateId ?? 'preview',
+				this.text,
+				this.textGroups,
+				this.appearance,
+			).outerHTML;
+			const pre = this.finalPreviewEl.createEl('pre', {
+				cls: 'ba-annotate-final-preview-source',
+			});
+			pre.createEl('code').setText(source);
+			return;
+		}
+
 		const previewBlock = this.finalPreviewEl.createDiv(
 			'ba-annotate-final-preview-block',
 		);
@@ -736,6 +779,21 @@ export class EditAnnotateModal extends Modal {
 				},
 			},
 		);
+	}
+
+	private setFinalPreviewMode(mode: FinalPreviewMode) {
+		if (this.finalPreviewMode === mode) return;
+		this.finalPreviewMode = mode;
+		this.updateFinalPreviewModeButtons();
+		this.renderFinalPreview();
+	}
+
+	private updateFinalPreviewModeButtons() {
+		for (const [mode, button] of this.finalPreviewModeButtons) {
+			const active = mode === this.finalPreviewMode;
+			button.buttonEl.toggleClass('is-active', active);
+			button.buttonEl.setAttribute('aria-pressed', String(active));
+		}
 	}
 
 	private selectFinalPreviewGroup(target: EventTarget | null) {
