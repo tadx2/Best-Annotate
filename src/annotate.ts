@@ -180,14 +180,23 @@ function updateAnnotate(
 function findAnnotateRange(source: string, id: string) {
 	const openingTagStart = `<div ${ANNOTATE_ID_ATTRIBUTE}="${id}"`;
 	const start = source.indexOf(openingTagStart);
-	const closingTagStart = source.indexOf(
-		'</div>',
-		start + openingTagStart.length,
-	);
+	if (start === -1) return null;
 
-	if (start === -1 || closingTagStart === -1) return null;
+	const divTagPattern = /<\/?div\b[^>]*>/gi;
+	divTagPattern.lastIndex = start;
+	let depth = 0;
+	let blockEnd: number | null = null;
+	let match: RegExpExecArray | null;
+	while ((match = divTagPattern.exec(source)) !== null) {
+		const tag = match[0];
+		depth += tag.startsWith('</') ? -1 : 1;
+		if (depth === 0) {
+			blockEnd = match.index + tag.length;
+			break;
+		}
+	}
+	if (blockEnd === null) return null;
 
-	const blockEnd = closingTagStart + '</div>'.length;
 	const trailingNewlines =
 		source.slice(blockEnd).match(/^\n{0,2}/)?.[0].length ?? 0;
 

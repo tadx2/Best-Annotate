@@ -6,7 +6,8 @@
 .ba-annotate-modal .modal-content {
 	display: flex;
 	flex-direction: column;
-	max-height: min(80vh, 52rem);
+	height: min(88vh, 60rem);
+	max-height: min(88vh, 60rem);
 	overflow: hidden;
 }
 

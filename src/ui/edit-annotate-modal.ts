@@ -10,8 +10,8 @@ import { cloneAnnotateBlockAppearance } from '../annotate-block/defaults';
 import { AnnotateBlockAppearance } from '../annotate-block/types';
 import { FastGroupPreset } from '../fast-group';
 import {
-	applyAnnotateBlockAppearance,
 	appendAnnotatedText,
+	createAnnotateContentElement,
 	createTextGroupElement,
 } from '../text-group/dom';
 import {
@@ -445,9 +445,12 @@ export class EditAnnotateModal extends Modal {
 		const previewBlock = this.finalPreviewEl.createDiv(
 			'ba-annotate-final-preview-block',
 		);
-		applyAnnotateBlockAppearance(previewBlock, this.appearance);
-		appendAnnotatedText(
+		const previewContent = createAnnotateContentElement(
 			previewBlock,
+			this.appearance,
+		);
+		appendAnnotatedText(
+			previewContent,
 			this.text,
 			this.textGroups,
 			{

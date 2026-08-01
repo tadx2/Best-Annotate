@@ -6,6 +6,7 @@ export const DEFAULT_ANNOTATE_BLOCK_APPEARANCE: AnnotateBlockAppearance = {
 	paragraphBackgroundColor: null,
 	paragraphMaxWidth: null,
 	lineHeight: null,
+	paragraphMarginColor: null,
 	paragraphMarginAll: null,
 	paragraphMarginTop: null,
 	paragraphMarginRight: null,

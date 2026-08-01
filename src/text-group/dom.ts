@@ -12,6 +12,7 @@ const BLOCK_BACKGROUND_COLOR_ATTRIBUTE = 'data-ba-block-background-color';
 const BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE =
 	'data-ba-block-paragraph-max-width';
 const BLOCK_LINE_HEIGHT_ATTRIBUTE = 'data-ba-block-line-height';
+const BLOCK_MARGIN_COLOR_ATTRIBUTE = 'data-ba-block-margin-color';
 const BLOCK_MARGIN_ALL_ATTRIBUTE = 'data-ba-block-margin';
 const BLOCK_MARGIN_TOP_ATTRIBUTE = 'data-ba-block-margin-top';
 const BLOCK_MARGIN_RIGHT_ATTRIBUTE = 'data-ba-block-margin-right';
@@ -66,157 +67,184 @@ export function createAnnotateElement(
 ) {
 	const annotate = doc.createElement('div');
 	annotate.setAttribute(ANNOTATE_ID_ATTRIBUTE, id);
-	applyAnnotateBlockAppearance(annotate, appearance);
-	appendAnnotatedText(annotate, text, textGroups);
+	const content = createAnnotateContentElement(annotate, appearance);
+	appendAnnotatedText(content, text, textGroups);
 	return annotate;
 }
 
-export function applyAnnotateBlockAppearance(
-	element: HTMLElement,
+export function createAnnotateContentElement(
+	wrapper: HTMLElement,
 	appearance: AnnotateBlockAppearance,
 ) {
-	const styles: Record<string, string> = {};
+	const content = wrapper.ownerDocument.createElement('div');
+	content.classList.add('ba-annotate-content');
+	wrapper.appendChild(content);
+	const wrapperStyles: Record<string, string> = {};
+	const contentStyles: Record<string, string> = {};
 
 	if (appearance.fontSize !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_FONT_SIZE_ATTRIBUTE,
 			String(appearance.fontSize),
 		);
-		styles['font-size'] = `${appearance.fontSize}px`;
+		contentStyles['font-size'] = `${appearance.fontSize}px`;
 	}
 	if (appearance.textColor !== null) {
-		element.setAttribute(BLOCK_TEXT_COLOR_ATTRIBUTE, appearance.textColor);
-		styles.color = appearance.textColor;
+		wrapper.setAttribute(BLOCK_TEXT_COLOR_ATTRIBUTE, appearance.textColor);
+		contentStyles.color = appearance.textColor;
 	}
 	if (appearance.paragraphBackgroundColor !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_BACKGROUND_COLOR_ATTRIBUTE,
 			appearance.paragraphBackgroundColor,
 		);
-		styles['background-color'] = appearance.paragraphBackgroundColor;
+		contentStyles['background-color'] =
+			appearance.paragraphBackgroundColor;
 	}
 	if (appearance.paragraphMaxWidth !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE,
 			String(appearance.paragraphMaxWidth),
 		);
-		styles.width = '100%';
-		styles['max-width'] = `${appearance.paragraphMaxWidth}px`;
-		styles['box-sizing'] = 'border-box';
+		contentStyles.width = '100%';
+		contentStyles['max-width'] = `${appearance.paragraphMaxWidth}px`;
+		contentStyles['box-sizing'] = 'border-box';
 	}
 	if (appearance.lineHeight !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_LINE_HEIGHT_ATTRIBUTE,
 			String(appearance.lineHeight),
 		);
-		styles['line-height'] = String(appearance.lineHeight);
+		contentStyles['line-height'] = String(appearance.lineHeight);
+	}
+	if (appearance.paragraphMarginColor !== null) {
+		wrapper.setAttribute(
+			BLOCK_MARGIN_COLOR_ATTRIBUTE,
+			appearance.paragraphMarginColor,
+		);
+		wrapperStyles['background-color'] = appearance.paragraphMarginColor;
 	}
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		wrapperStyles,
 		BLOCK_MARGIN_ALL_ATTRIBUTE,
-		'margin',
+		'padding',
 		appearance.paragraphMarginAll,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		wrapperStyles,
 		BLOCK_MARGIN_TOP_ATTRIBUTE,
-		'margin-top',
+		'padding-top',
 		appearance.paragraphMarginTop,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		wrapperStyles,
 		BLOCK_MARGIN_RIGHT_ATTRIBUTE,
-		'margin-right',
+		'padding-right',
 		appearance.paragraphMarginRight,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		wrapperStyles,
 		BLOCK_MARGIN_BOTTOM_ATTRIBUTE,
-		'margin-bottom',
+		'padding-bottom',
 		appearance.paragraphMarginBottom,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		wrapperStyles,
 		BLOCK_MARGIN_LEFT_ATTRIBUTE,
-		'margin-left',
+		'padding-left',
 		appearance.paragraphMarginLeft,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		contentStyles,
 		BLOCK_PADDING_ALL_ATTRIBUTE,
 		'padding',
 		appearance.paragraphPaddingAll,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		contentStyles,
 		BLOCK_PADDING_TOP_ATTRIBUTE,
 		'padding-top',
 		appearance.paragraphPaddingTop,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		contentStyles,
 		BLOCK_PADDING_RIGHT_ATTRIBUTE,
 		'padding-right',
 		appearance.paragraphPaddingRight,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		contentStyles,
 		BLOCK_PADDING_BOTTOM_ATTRIBUTE,
 		'padding-bottom',
 		appearance.paragraphPaddingBottom,
 	);
 	applyOptionalPixelStyle(
-		element,
-		styles,
+		wrapper,
+		contentStyles,
 		BLOCK_PADDING_LEFT_ATTRIBUTE,
 		'padding-left',
 		appearance.paragraphPaddingLeft,
 	);
 	if (appearance.borderSize !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_BORDER_SIZE_ATTRIBUTE,
 			String(appearance.borderSize),
 		);
-		styles['border-style'] = 'solid';
-		styles['border-width'] = `${appearance.borderSize}px`;
+		contentStyles['border-style'] = 'solid';
+		contentStyles['border-width'] = `${appearance.borderSize}px`;
 	}
 	if (appearance.borderColor !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_BORDER_COLOR_ATTRIBUTE,
 			appearance.borderColor,
 		);
-		styles['border-color'] = appearance.borderColor;
+		contentStyles['border-color'] = appearance.borderColor;
 	}
 	if (appearance.textAlignment !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_TEXT_ALIGNMENT_ATTRIBUTE,
 			appearance.textAlignment,
 		);
-		styles['text-align'] = appearance.textAlignment;
+		contentStyles['text-align'] = appearance.textAlignment;
 	}
 	if (appearance.paragraphAlignment !== null) {
-		element.setAttribute(
+		wrapper.setAttribute(
 			BLOCK_PARAGRAPH_ALIGNMENT_ATTRIBUTE,
 			appearance.paragraphAlignment,
 		);
-		styles['margin-left'] =
+		contentStyles['margin-left'] =
 			appearance.paragraphAlignment === 'left' ? '0' : 'auto';
-		styles['margin-right'] =
+		contentStyles['margin-right'] =
 			appearance.paragraphAlignment === 'right' ? '0' : 'auto';
 	}
 
-	if (Object.keys(styles).length > 0) {
-		setInlineStyles(element, styles);
+	if (
+		appearance.paragraphPaddingAll !== null ||
+		appearance.paragraphPaddingTop !== null ||
+		appearance.paragraphPaddingRight !== null ||
+		appearance.paragraphPaddingBottom !== null ||
+		appearance.paragraphPaddingLeft !== null ||
+		appearance.borderSize !== null
+	) {
+		contentStyles.width = '100%';
+		contentStyles['box-sizing'] = 'border-box';
 	}
+	if (Object.keys(wrapperStyles).length > 0) {
+		setInlineStyles(wrapper, wrapperStyles);
+	}
+	if (Object.keys(contentStyles).length > 0) {
+		setInlineStyles(content, contentStyles);
+	}
+	return content;
 }
 
 export function createTextGroupElement(
@@ -435,6 +463,9 @@ function readAnnotateBlockAppearance(
 		lineHeight: getOptionalNumberAttribute(
 			annotate,
 			BLOCK_LINE_HEIGHT_ATTRIBUTE,
+		),
+		paragraphMarginColor: annotate.getAttribute(
+			BLOCK_MARGIN_COLOR_ATTRIBUTE,
 		),
 		paragraphMarginAll: getOptionalNumberAttribute(
 			annotate,

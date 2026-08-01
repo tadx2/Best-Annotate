@@ -6,6 +6,7 @@ export interface AnnotateBlockAppearance {
 	paragraphBackgroundColor: string | null;
 	paragraphMaxWidth: number | null;
 	lineHeight: number | null;
+	paragraphMarginColor: string | null;
 	paragraphMarginAll: number | null;
 	paragraphMarginTop: number | null;
 	paragraphMarginRight: number | null;

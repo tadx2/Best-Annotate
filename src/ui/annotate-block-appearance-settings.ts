@@ -29,6 +29,7 @@ export interface AnnotateBlockAppearanceSettingsOptions {
 export type AnnotateBlockAppearanceSection =
 	| 'Paragraph'
 	| 'Text'
+	| 'Wrapper'
 	| 'Margin'
 	| 'Padding'
 	| 'Border';
@@ -52,6 +53,7 @@ type AnnotateBlockNumberKey =
 type AnnotateBlockColorKey =
 	| 'textColor'
 	| 'paragraphBackgroundColor'
+	| 'paragraphMarginColor'
 	| 'borderColor';
 
 type AnnotateBlockAlignmentKey =
@@ -92,6 +94,7 @@ interface AnnotateBlockColorSettingSpec {
 }
 
 const DEFAULT_ANNOTATE_BLOCK_COLOR = '#000000';
+const DEFAULT_PARAGRAPH_BACKGROUND_COLOR = '#ffffff';
 
 const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpec[] = [
 	{
@@ -258,6 +261,12 @@ const ANNOTATE_BLOCK_COLOR_SETTING_SPECS: AnnotateBlockColorSettingSpec[] = [
 		key: 'paragraphBackgroundColor',
 	},
 	{
+		section: 'Wrapper',
+		name: 'Wrapper Background (Outer Margin Color)',
+		desc: 'Set the wrapper background shown around the paragraph.',
+		key: 'paragraphMarginColor',
+	},
+	{
 		section: 'Text',
 		name: 'Text color',
 		desc: 'Override the inherited paragraph text color.',
@@ -274,6 +283,7 @@ const ANNOTATE_BLOCK_COLOR_SETTING_SPECS: AnnotateBlockColorSettingSpec[] = [
 const ANNOTATE_BLOCK_APPEARANCE_SECTIONS: AnnotateBlockAppearanceSection[] = [
 	'Text',
 	'Paragraph',
+	'Wrapper',
 	'Border',
 	'Margin',
 	'Padding',
@@ -289,12 +299,23 @@ export function renderAnnotateBlockAppearanceSettings(
 		AnnotateBlockNumberKey,
 		() => void
 	>();
+	const colorSettingRefreshers = new Map<
+		AnnotateBlockColorKey,
+		() => void
+	>();
 	const onNumberOverrideChange = (
 		key: AnnotateBlockNumberKey,
 		enabled: boolean,
 	) => {
 		applySpacingOverrideExclusivity(appearance, key, enabled);
 		for (const refresh of numberSettingRefreshers.values()) refresh();
+	};
+	const onColorOverrideChange = (
+		key: AnnotateBlockColorKey,
+		enabled: boolean,
+	) => {
+		applyMarginColorBackground(appearance, key, enabled);
+		for (const refresh of colorSettingRefreshers.values()) refresh();
 	};
 	for (const section of ANNOTATE_BLOCK_APPEARANCE_SECTIONS) {
 		const sectionEl = container.createDiv(
@@ -326,12 +347,14 @@ export function renderAnnotateBlockAppearanceSettings(
 			const setting = new Setting(sectionEl)
 				.setName(spec.name)
 				.setDesc(spec.desc);
-			renderColorSetting(
+			const refresh = renderColorSetting(
 				setting,
 				appearance,
 				spec,
 				options.onChange,
+				onColorOverrideChange,
 			);
+			colorSettingRefreshers.set(spec.key, refresh);
 		}
 
 		if (section === 'Text') {
@@ -350,7 +373,7 @@ export function renderAnnotateBlockAppearanceSettings(
 			const paragraphAlignmentSetting = new Setting(sectionEl)
 				.setName('Paragraph alignment')
 				.setDesc(
-					'Align the paragraph block when a maximum width is set.',
+					'Align the paragraph inside the wrapper when a maximum width is set.',
 				);
 			refreshAlignmentState = renderIconAlignmentSetting(
 				paragraphAlignmentSetting,
@@ -373,12 +396,23 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 		AnnotateBlockNumberKey,
 		() => void
 	>();
+	const colorSettingRefreshers = new Map<
+		AnnotateBlockColorKey,
+		() => void
+	>();
 	const onNumberOverrideChange = (
 		key: AnnotateBlockNumberKey,
 		enabled: boolean,
 	) => {
 		applySpacingOverrideExclusivity(appearance, key, enabled);
 		for (const refresh of numberSettingRefreshers.values()) refresh();
+	};
+	const onColorOverrideChange = (
+		key: AnnotateBlockColorKey,
+		enabled: boolean,
+	) => {
+		applyMarginColorBackground(appearance, key, enabled);
+		for (const refresh of colorSettingRefreshers.values()) refresh();
 	};
 
 	return ANNOTATE_BLOCK_APPEARANCE_SECTIONS.map((section) => {
@@ -407,12 +441,14 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 				name: spec.name,
 				desc: spec.desc,
 				render: (setting: Setting) => {
-					renderColorSetting(
+					const refresh = renderColorSetting(
 						setting,
 						appearance,
 						spec,
 						options.onChange,
+						onColorOverrideChange,
 					);
+					colorSettingRefreshers.set(spec.key, refresh);
 				},
 			})),
 		];
@@ -433,7 +469,7 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 		if (section === 'Paragraph') {
 			items.push({
 				name: 'Paragraph alignment',
-				desc: 'Align the paragraph block when a maximum width is set.',
+				desc: 'Align the paragraph inside the wrapper when a maximum width is set.',
 				render: (setting: Setting) => {
 					refreshAlignmentState = renderIconAlignmentSetting(
 						setting,
@@ -561,10 +597,15 @@ function renderColorSetting(
 	appearance: AnnotateBlockAppearance,
 	spec: AnnotateBlockColorSettingSpec,
 	onChange: () => void | Promise<void>,
+	onOverrideChange: (
+		key: AnnotateBlockColorKey,
+		enabled: boolean,
+	) => void,
 ) {
 	const hasOverride = appearance[spec.key] !== null;
 	let colorPicker: ColorComponent | null = null;
 	let colorInput: HTMLInputElement | null = null;
+	let toggle: ToggleComponent | null = null;
 
 	setting
 		.addColorPicker((component) => {
@@ -583,15 +624,42 @@ function renderColorSetting(
 					return onChange();
 				});
 		})
-		.addToggle((toggle) => {
-			toggle.setValue(hasOverride).onChange((enabled) => {
+		.addToggle((component) => {
+			toggle = component;
+			component.setValue(hasOverride).onChange((enabled) => {
 				if (colorInput) colorInput.disabled = !enabled;
 				appearance[spec.key] = enabled
 					? colorPicker?.getValue() ?? DEFAULT_ANNOTATE_BLOCK_COLOR
 					: null;
+				onOverrideChange(spec.key, enabled);
 				return onChange();
 			});
 		});
+
+	const refresh = () => {
+		const value = appearance[spec.key];
+		const enabled = value !== null;
+		if (colorInput) colorInput.disabled = !enabled;
+		toggle?.setValue(enabled);
+		if (value !== null) colorPicker?.setValue(value);
+	};
+	refresh();
+	return refresh;
+}
+
+function applyMarginColorBackground(
+	appearance: AnnotateBlockAppearance,
+	key: AnnotateBlockColorKey,
+	enabled: boolean,
+) {
+	if (
+		key === 'paragraphMarginColor' &&
+		enabled &&
+		appearance.paragraphBackgroundColor === null
+	) {
+		appearance.paragraphBackgroundColor =
+			DEFAULT_PARAGRAPH_BACKGROUND_COLOR;
+	}
 }
 
 function formatNumberValue(value: number) {
