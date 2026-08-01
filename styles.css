@@ -210,6 +210,30 @@
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 	word-break: break-word;
+	cursor: text;
+	user-select: text;
+	-webkit-user-select: text;
+}
+
+.ba-annotate-html-syntax-punctuation {
+	color: var(--text-muted);
+}
+
+.ba-annotate-html-syntax-tag {
+	color: var(--color-purple);
+}
+
+.ba-annotate-html-syntax-attribute {
+	color: var(--color-cyan);
+}
+
+.ba-annotate-html-syntax-value {
+	color: var(--color-green);
+}
+
+.ba-annotate-html-syntax-comment {
+	color: var(--text-faint);
+	font-style: italic;
 }
 
 .ba-annotate-html-diff-added,

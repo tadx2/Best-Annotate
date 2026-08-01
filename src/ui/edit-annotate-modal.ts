@@ -12,6 +12,7 @@ import { createFastGroupPreset, FastGroupPreset } from '../fast-group';
 import {
 	FinalPreviewSettings,
 	htmlContentsAreEqual,
+	renderHighlightedHtml,
 	renderHtmlDiff,
 } from '../final-preview';
 import { formatHtml } from '../html-formatter';
@@ -137,6 +138,7 @@ export class EditAnnotateModal extends Modal {
 		FinalPreviewMode,
 		ButtonComponent
 	>();
+	private copyHtmlButton!: ButtonComponent;
 	private lastPreviewHtml = '';
 	private htmlDiffBefore = '';
 	private htmlHighlightExpiresAt = 0;
@@ -204,6 +206,11 @@ export class EditAnnotateModal extends Modal {
 			button.buttonEl.addClass('ba-annotate-preview-mode-button');
 			this.finalPreviewModeButtons.set(mode.id, button);
 		}
+		this.copyHtmlButton = new ButtonComponent(finalPreviewModes)
+			.setIcon('copy')
+			.setTooltip('Copy HTML')
+			.onClick(() => void this.copyFinalPreviewHtml());
+		this.copyHtmlButton.buttonEl.setAttribute('aria-label', 'Copy HTML');
 		this.updateFinalPreviewModeButtons();
 		this.finalPreviewEl = finalPreviewSection.createDiv(
 			'ba-annotate-final-preview',
@@ -774,7 +781,7 @@ export class EditAnnotateModal extends Modal {
 					this.options.finalPreviewSettings,
 				);
 			} else {
-				code.setText(formattedCurrentHtml);
+				renderHighlightedHtml(code, formattedCurrentHtml);
 			}
 			return;
 		}
@@ -859,6 +866,17 @@ export class EditAnnotateModal extends Modal {
 			const active = mode === this.finalPreviewMode;
 			button.buttonEl.toggleClass('is-active', active);
 			button.buttonEl.setAttribute('aria-pressed', String(active));
+		}
+		this.copyHtmlButton.buttonEl.hidden = this.finalPreviewMode !== 'html';
+	}
+
+	private async copyFinalPreviewHtml() {
+		const html = formatHtml(this.createFinalPreviewHtml());
+		try {
+			await navigator.clipboard.writeText(html);
+			new Notice('HTML copied.');
+		} catch {
+			new Notice('Unable to copy HTML.');
 		}
 	}
 

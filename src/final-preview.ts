@@ -14,6 +14,7 @@ export const DEFAULT_FINAL_PREVIEW_SETTINGS: FinalPreviewSettings = {
 
 type HtmlDiffToken = {
 	kind: 'markup' | 'text';
+	syntax: 'punctuation' | 'tag' | 'attribute' | 'value' | 'text' | 'comment';
 	value: string;
 	leadingWhitespace: string;
 };
@@ -35,8 +36,7 @@ export function renderHtmlDiff(
 		const operation = operations[index];
 		if (!operation) break;
 		if (operation.type === 'equal') {
-			appendTokenWhitespace(container, operation.token);
-			container.appendText(operation.token.value);
+			appendSyntaxToken(container, operation.token);
 			index += 1;
 			continue;
 		}
@@ -59,16 +59,16 @@ export function renderHtmlDiff(
 		for (const item of changedOperations) {
 			appendTokenWhitespace(container, item.token);
 			if (item.type === 'deleted') {
-				appendHighlightedText(
+				appendHighlightedToken(
 					container,
-					item.token.value,
+					item.token,
 					'deleted',
 					settings.deletedHighlightColor,
 				);
 			} else if (item.type === 'added') {
-				appendHighlightedText(
+				appendHighlightedToken(
 					container,
-					item.token.value,
+					item.token,
 					hasDeleted && hasAdded ? 'changed' : 'added',
 					hasDeleted && hasAdded
 						? settings.changedHighlightColor
@@ -76,6 +76,15 @@ export function renderHtmlDiff(
 				);
 			}
 		}
+	}
+}
+
+export function renderHighlightedHtml(
+	container: HTMLElement,
+	source: string,
+) {
+	for (const token of tokenizeHtml(source)) {
+		appendSyntaxToken(container, token);
 	}
 }
 
@@ -98,15 +107,30 @@ function appendTokenWhitespace(
 	}
 }
 
-function appendHighlightedText(
+function appendSyntaxToken(container: HTMLElement, token: HtmlDiffToken) {
+	appendTokenWhitespace(container, token);
+	if (token.syntax === 'text') {
+		container.appendText(token.value);
+		return;
+	}
+	container.createSpan({
+		cls: `ba-annotate-html-syntax-${token.syntax}`,
+		text: token.value,
+	});
+}
+
+function appendHighlightedToken(
 	container: HTMLElement,
-	value: string,
+	token: HtmlDiffToken,
 	type: 'added' | 'changed' | 'deleted',
 	color: string,
 ) {
 	const span = container.createSpan({
-		cls: `ba-annotate-html-diff-${type}`,
-		text: value,
+		cls: [
+			`ba-annotate-html-diff-${type}`,
+			`ba-annotate-html-syntax-${token.syntax}`,
+		],
+		text: token.value,
 	});
 	span.style.backgroundColor = color;
 	span.setAttribute('title', `${type[0]?.toUpperCase() ?? ''}${type.slice(1)}`);
@@ -234,7 +258,11 @@ function tokensAreEqual(
 	left: HtmlDiffToken | undefined,
 	right: HtmlDiffToken | undefined,
 ) {
-	return left?.kind === right?.kind && left?.value === right?.value;
+	return (
+		left?.kind === right?.kind &&
+		left?.syntax === right?.syntax &&
+		left?.value === right?.value
+	);
 }
 
 function getMatrixValue(
@@ -250,27 +278,50 @@ function tokenizeHtml(source: string) {
 	const chunks = source.match(/<!--[\s\S]*?-->|<[^>]*>|[^<]+/g) ?? [];
 	let pendingWhitespace = '';
 
-	const appendToken = (kind: HtmlDiffToken['kind'], value: string) => {
+	const appendToken = (
+		kind: HtmlDiffToken['kind'],
+		syntax: HtmlDiffToken['syntax'],
+		value: string,
+	) => {
 		if (/^\s+$/u.test(value)) {
 			pendingWhitespace += value;
 			return;
 		}
-		tokens.push({ kind, value, leadingWhitespace: pendingWhitespace });
+		tokens.push({
+			kind,
+			syntax,
+			value,
+			leadingWhitespace: pendingWhitespace,
+		});
 		pendingWhitespace = '';
 	};
 
 	for (const chunk of chunks) {
 		if (chunk.startsWith('<!--')) {
-			appendToken('markup', chunk);
+			appendToken('markup', 'comment', chunk);
 		} else if (chunk.startsWith('<')) {
 			const markupTokens =
 				chunk.match(/<\/?|\/?>|=|"[^"]*"|'[^']*'|[^\s<>=]+|\s+/g) ?? [];
+			let expectsTagName = true;
 			for (const token of markupTokens) {
-				appendToken('markup', token);
+				if (/^\s+$/u.test(token)) {
+					appendToken('markup', 'punctuation', token);
+				} else if (/^<\/?$/u.test(token) || /^\/?>$/u.test(token)) {
+					appendToken('markup', 'punctuation', token);
+				} else if (expectsTagName) {
+					appendToken('markup', 'tag', token);
+					expectsTagName = false;
+				} else if (token === '=') {
+					appendToken('markup', 'punctuation', token);
+				} else if (/^(?:"[^"]*"|'[^']*')$/u.test(token)) {
+					appendToken('markup', 'value', token);
+				} else {
+					appendToken('markup', 'attribute', token);
+				}
 			}
 		} else {
 			for (const character of Array.from(chunk)) {
-				appendToken('text', character);
+				appendToken('text', 'text', character);
 			}
 		}
 	}
