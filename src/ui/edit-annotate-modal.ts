@@ -12,7 +12,6 @@ import { FastGroupPreset } from '../fast-group';
 import {
 	appendAnnotatedText,
 	createAnnotateContentElement,
-	createTextGroupElement,
 } from '../text-group/dom';
 import {
 	cloneTextGroupAppearance,
@@ -110,12 +109,10 @@ export class EditAnnotateModal extends Modal {
 	private appearance: AnnotateBlockAppearance;
 	private segmentsEl!: HTMLElement;
 	private segmentSelector!: SegmentSelector;
-	private textGroupPreviewEl!: HTMLElement;
+	// Text Group Preview is temporarily disabled.
 	private groupSettingsEl!: HTMLElement;
 	private finalPreviewEl!: HTMLElement;
-	private groupCreationEl!: HTMLElement;
 	private selectedTextGroupEl!: HTMLElement;
-	private segmentGroupActionsEl!: HTMLElement;
 	private groupTextButton!: ButtonComponent;
 	private readonly fastGroupButtons: ButtonComponent[] = [];
 	private ungroupTextButton!: ButtonComponent;
@@ -222,15 +219,60 @@ export class EditAnnotateModal extends Modal {
 			'ba-annotate-column',
 		);
 
-		this.groupCreationEl = groupColumn.createDiv(
-			'ba-annotate-group-creation',
+		this.selectedTextGroupEl = groupColumn.createDiv(
+			'ba-annotate-selected-text-group',
 		);
-		this.groupTextButton = new ButtonComponent(this.groupCreationEl)
+		/* Text Group Preview is temporarily disabled.
+		this.selectedTextGroupEl.createDiv({
+			cls: 'ba-annotate-section-label',
+			text: 'Text group preview',
+		});
+		this.textGroupPreviewEl = this.selectedTextGroupEl.createDiv(
+			'ba-annotate-text-group-preview',
+		);
+		*/
+
+		const groupSettingsHeader = this.selectedTextGroupEl.createDiv(
+			'ba-annotate-section-header',
+		);
+		groupSettingsHeader.createDiv({
+			cls: 'ba-annotate-section-label',
+			text: 'Text group settings',
+		});
+		this.groupSettingsEl = this.selectedTextGroupEl.createDiv(
+			'ba-annotate-group-settings',
+		);
+
+		this.segmentsEl = segmentsColumn.createDiv('ba-annotate-segments');
+		const segmentActionRows = segmentsColumn.createDiv(
+			'ba-annotate-segment-action-rows',
+		);
+		const groupActions = segmentActionRows.createDiv(
+			'ba-annotate-segment-action-row',
+		);
+		this.groupTextButton = new ButtonComponent(groupActions)
 			.setButtonText('Group')
 			.onClick(() => this.createTextGroups());
+		this.groupTextButton.buttonEl.addClass(
+			'ba-annotate-group-button',
+		);
+		this.ungroupTextButton = new ButtonComponent(groupActions)
+			.setButtonText('Ungroup')
+			.onClick(() => this.ungroupTextGroup());
+		this.ungroupTextButton.buttonEl.addClass(
+			'ba-annotate-ungroup-button',
+		);
+		this.ungroupAllTextButton = new ButtonComponent(groupActions)
+			.setButtonText('Ungroup all')
+			.setDestructive()
+			.onClick(() => this.ungroupAllTextGroups());
+
+		const fastGroupActions = segmentActionRows.createDiv(
+			'ba-annotate-segment-action-row',
+		);
 		this.fastGroupButtons.length = 0;
 		for (const preset of this.options.fastGroupPresets ?? []) {
-			const button = new ButtonComponent(this.groupCreationEl)
+			const button = new ButtonComponent(fastGroupActions)
 				.setButtonText(preset.title.trim() || 'Fast group')
 				.onClick(() => this.createTextGroups(preset));
 			button.buttonEl.addClass('ba-annotate-fast-group-button');
@@ -245,67 +287,22 @@ export class EditAnnotateModal extends Modal {
 			this.fastGroupButtons.push(button);
 		}
 
-		this.selectedTextGroupEl = groupColumn.createDiv(
-			'ba-annotate-selected-text-group',
-		);
-		this.selectedTextGroupEl.createDiv({
-			cls: 'ba-annotate-section-label',
-			text: 'Text group preview',
-		});
-		this.textGroupPreviewEl = this.selectedTextGroupEl.createDiv(
-			'ba-annotate-text-group-preview',
-		);
-
-		const groupSettingsHeader = this.selectedTextGroupEl.createDiv(
-			'ba-annotate-section-header',
-		);
-		groupSettingsHeader.createDiv({
-			cls: 'ba-annotate-section-label',
-			text: 'Text group settings',
-		});
-		const groupSettingsActions = groupSettingsHeader.createDiv(
-			'ba-annotate-section-actions',
+		const clearGroupActions = segmentActionRows.createDiv(
+			'ba-annotate-segment-action-row',
 		);
 		this.clearTextGroupStyleButton = new ButtonComponent(
-			groupSettingsActions,
+			clearGroupActions,
 		)
-			.setButtonText('Clear style')
+			.setButtonText(
+				'Clear group setting (without annotate text)',
+			)
 			.onClick(() => this.clearTextGroupStyles());
 		this.clearTextGroupAllButton = new ButtonComponent(
-			groupSettingsActions,
+			clearGroupActions,
 		)
-			.setButtonText('Clear all')
+			.setButtonText('Clear group setting')
 			.onClick(() => this.clearTextGroupAll());
-		this.groupSettingsEl = this.selectedTextGroupEl.createDiv(
-			'ba-annotate-group-settings',
-		);
 
-		const segmentsHeader = segmentsColumn.createDiv(
-			'ba-annotate-section-header',
-		);
-		segmentsHeader.createDiv({
-			cls: 'ba-annotate-section-label',
-			text: 'Segments',
-		});
-		this.segmentGroupActionsEl = segmentsHeader.createDiv(
-			'ba-annotate-section-actions',
-		);
-		this.ungroupAllTextButton = new ButtonComponent(
-			this.segmentGroupActionsEl,
-		)
-			.setButtonText('Ungroup all')
-			.setDestructive()
-			.onClick(() => this.ungroupAllTextGroups());
-		this.ungroupTextButton = new ButtonComponent(
-			this.segmentGroupActionsEl,
-		)
-			.setButtonText('Ungroup')
-			.onClick(() => this.ungroupTextGroup());
-		this.ungroupTextButton.buttonEl.addClass(
-			'ba-annotate-ungroup-button',
-		);
-
-		this.segmentsEl = segmentsColumn.createDiv('ba-annotate-segments');
 		this.segmentSelector = new SegmentSelector(this.segmentsEl, () => {
 			this.renderSelectedTextGroup();
 			this.updateSegmentActionButtons();
@@ -405,15 +402,16 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private renderSelectedTextGroup() {
-		this.renderTextGroupPreview();
+		// this.renderTextGroupPreview();
 		this.renderGroupSettings();
 	}
 
 	private refreshPreviews() {
-		this.renderTextGroupPreview();
+		// this.renderTextGroupPreview();
 		this.renderFinalPreview();
 	}
 
+	/* Text Group Preview is temporarily disabled.
 	private renderTextGroupPreview() {
 		this.textGroupPreviewEl.empty();
 		const selectedIndex =
@@ -439,6 +437,7 @@ export class EditAnnotateModal extends Modal {
 			),
 		);
 	}
+	*/
 
 	private renderFinalPreview() {
 		this.finalPreviewEl.empty();
@@ -633,7 +632,9 @@ export class EditAnnotateModal extends Modal {
 			this.segmentSelector.getSelectedTextGroupIndex() !== null;
 		this.ungroupTextButton.buttonEl.disabled = !hasSelectedTextGroup;
 		this.ungroupAllTextButton.buttonEl.disabled =
-			this.textGroups.length === 0;
+			this.textGroups.length === 0 ||
+			hasSelectedSegments ||
+			hasSelectedTextGroup;
 		this.clearTextGroupStyleButton.buttonEl.disabled =
 			!hasSelectedTextGroup;
 		this.clearTextGroupAllButton.buttonEl.disabled =
@@ -644,18 +645,7 @@ export class EditAnnotateModal extends Modal {
 	private updateRightColumn() {
 		const showSelectedTextGroup =
 			this.segmentSelector.getSelectedTextGroupIndex() !== null;
-		const showGroupCreation =
-			!showSelectedTextGroup &&
-			this.segmentSelector.hasSelectedSegments();
-		this.groupCreationEl.toggleClass(
-			'ba-annotate-is-hidden',
-			!showGroupCreation,
-		);
 		this.selectedTextGroupEl.toggleClass(
-			'ba-annotate-is-hidden',
-			!showSelectedTextGroup,
-		);
-		this.segmentGroupActionsEl.toggleClass(
 			'ba-annotate-is-hidden',
 			!showSelectedTextGroup,
 		);
