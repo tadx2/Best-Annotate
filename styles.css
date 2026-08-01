@@ -168,6 +168,8 @@
 
 .ba-text-group u {
 	text-decoration-color: var(--ba-underline-color);
+	text-decoration-thickness: var(--ba-underline-thickness);
+	text-underline-offset: var(--ba-underline-offset);
 }
 
 .ba-text-group rt {

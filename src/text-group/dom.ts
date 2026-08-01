@@ -6,6 +6,8 @@ const TEXT_COLOR_ATTRIBUTE = 'data-ba-text-color';
 const TEXT_BACKGROUND_COLOR_ATTRIBUTE = 'data-ba-text-background-color';
 const UNDERLINE_ATTRIBUTE = 'data-ba-underline';
 const UNDERLINE_COLOR_ATTRIBUTE = 'data-ba-underline-color';
+const UNDERLINE_THICKNESS_ATTRIBUTE = 'data-ba-underline-thickness';
+const UNDERLINE_OFFSET_ATTRIBUTE = 'data-ba-underline-offset';
 const ANNOTATE_COLOR_ATTRIBUTE = 'data-ba-annotate-color';
 const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
 const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
@@ -49,6 +51,8 @@ export function createTextGroupElement(
 		'--ba-text-background-color':
 			appearance.textBackgroundColor ?? 'transparent',
 		'--ba-underline-color': appearance.underlineColor,
+		'--ba-underline-thickness': `${appearance.underlineThickness}px`,
+		'--ba-underline-offset': `${appearance.underlineOffset}px`,
 		'--ba-annotate-color': appearance.annotateColor,
 		'ruby-position': appearance.annotatePosition,
 		'ruby-align': appearance.annotateCompact ? 'center' : 'space-around',
@@ -66,6 +70,8 @@ export function createTextGroupElement(
 		const underline = doc.createElement('u');
 		setInlineStyles(underline, {
 			'text-decoration-color': appearance.underlineColor,
+			'text-decoration-thickness': `${appearance.underlineThickness}px`,
+			'text-underline-offset': `${appearance.underlineOffset}px`,
 		});
 		appendText(underline, text);
 		base.appendChild(underline);
@@ -175,6 +181,14 @@ function writeAppearanceAttributes(
 	);
 	ruby.setAttribute(UNDERLINE_ATTRIBUTE, String(appearance.underline));
 	ruby.setAttribute(UNDERLINE_COLOR_ATTRIBUTE, appearance.underlineColor);
+	ruby.setAttribute(
+		UNDERLINE_THICKNESS_ATTRIBUTE,
+		String(appearance.underlineThickness),
+	);
+	ruby.setAttribute(
+		UNDERLINE_OFFSET_ATTRIBUTE,
+		String(appearance.underlineOffset),
+	);
 	ruby.setAttribute(ANNOTATE_COLOR_ATTRIBUTE, appearance.annotateColor);
 	ruby.setAttribute(
 		ANNOTATE_VISIBLE_ATTRIBUTE,
@@ -200,6 +214,14 @@ function readAppearance(ruby: HTMLElement): TextGroupAppearance {
 			ruby.getAttribute(TEXT_BACKGROUND_COLOR_ATTRIBUTE) || null,
 		underline: getRequiredAttribute(ruby, UNDERLINE_ATTRIBUTE) === 'true',
 		underlineColor: getRequiredAttribute(ruby, UNDERLINE_COLOR_ATTRIBUTE),
+		underlineThickness: getRequiredNumberAttribute(
+			ruby,
+			UNDERLINE_THICKNESS_ATTRIBUTE,
+		),
+		underlineOffset: getRequiredNumberAttribute(
+			ruby,
+			UNDERLINE_OFFSET_ATTRIBUTE,
+		),
 		annotate: annotate ? readElementText(annotate) : '',
 		annotateColor: getRequiredAttribute(ruby, ANNOTATE_COLOR_ATTRIBUTE),
 		annotateVisible:
@@ -242,6 +264,14 @@ function readElementText(element: Element) {
 function getRequiredAttribute(element: Element, name: string) {
 	const value = element.getAttribute(name);
 	if (value === null) throw new Error(`Missing ${name} attribute.`);
+	return value;
+}
+
+function getRequiredNumberAttribute(element: Element, name: string) {
+	const value = Number(getRequiredAttribute(element, name));
+	if (!Number.isFinite(value)) {
+		throw new Error(`Invalid ${name} attribute.`);
+	}
 	return value;
 }
 

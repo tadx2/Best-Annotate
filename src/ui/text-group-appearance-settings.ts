@@ -99,6 +99,40 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 		},
 	},
 	{
+		section: 'Underline',
+		name: 'Underline thickness',
+		render: (setting, appearance, onChange) => {
+			setting.addSlider((slider) => {
+				slider
+					.setLimits(0.5, 8, 0.5)
+					.setValue(appearance.underlineThickness)
+					.setDisplayFormat((value) => `${value}px`)
+					.setInstant(true)
+					.onChange((value) => {
+						appearance.underlineThickness = value;
+						return onChange();
+					});
+			});
+		},
+	},
+	{
+		section: 'Underline',
+		name: 'Distance from text',
+		render: (setting, appearance, onChange) => {
+			setting.addSlider((slider) => {
+				slider
+					.setLimits(0, 12, 1)
+					.setValue(appearance.underlineOffset)
+					.setDisplayFormat((value) => `${value}px`)
+					.setInstant(true)
+					.onChange((value) => {
+						appearance.underlineOffset = value;
+						return onChange();
+					});
+			});
+		},
+	},
+	{
 		section: 'Annotate',
 		name: 'Annotate text',
 		render: (setting, appearance, onChange) => {
