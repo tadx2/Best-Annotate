@@ -256,13 +256,6 @@ export class EditAnnotateModal extends Modal {
 		);
 		*/
 
-		const groupSettingsHeader = this.selectedTextGroupEl.createDiv(
-			'ba-annotate-section-header',
-		);
-		groupSettingsHeader.createDiv({
-			cls: 'ba-annotate-section-label',
-			text: 'Text group settings',
-		});
 		this.groupSettingsEl = this.selectedTextGroupEl.createDiv(
 			'ba-annotate-group-settings',
 		);
@@ -787,7 +780,10 @@ export class EditAnnotateModal extends Modal {
 		renderTextGroupAppearanceSettings(
 			this.groupSettingsEl,
 			group.appearance,
-			{ onChange: () => this.refreshPreviews() },
+			{
+				onChange: () => this.refreshPreviews(),
+				displayMode: 'tabs',
+			},
 		);
 	}
 
@@ -904,7 +900,7 @@ export class EditAnnotateModal extends Modal {
 		if (!group) return;
 
 		this.resetTextGroupStyles(group);
-		group.appearance.annotate = '';
+		group.appearance.annotate = null;
 		this.renderSelectedTextGroup();
 		this.renderFinalPreview();
 	}

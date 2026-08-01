@@ -9,21 +9,21 @@ export const DEFAULT_ANNOTATE_OFFSET_Y = 0;
 export const DEFAULT_ANNOTATE_SPACING = 0;
 
 export const DEFAULT_TEXT_GROUP_APPEARANCE: TextGroupAppearance = {
-	textColor: DEFAULT_GROUP_COLOR,
+	textColor: null,
 	textBackgroundColor: null,
-	underline: false,
-	underlineColor: DEFAULT_GROUP_COLOR,
-	underlineThickness: DEFAULT_UNDERLINE_THICKNESS,
-	underlineOffset: DEFAULT_UNDERLINE_OFFSET,
-	annotate: '',
-	annotateColor: DEFAULT_GROUP_COLOR,
-	annotateFontSize: DEFAULT_ANNOTATE_FONT_SIZE,
-	annotateOffsetX: DEFAULT_ANNOTATE_OFFSET_X,
-	annotateOffsetY: DEFAULT_ANNOTATE_OFFSET_Y,
-	annotateSpacing: DEFAULT_ANNOTATE_SPACING,
-	annotateVisible: true,
-	annotatePosition: 'under',
-	annotateCompact: true,
+	underline: null,
+	underlineColor: null,
+	underlineThickness: null,
+	underlineOffset: null,
+	annotate: null,
+	annotateColor: null,
+	annotateFontSize: null,
+	annotateOffsetX: null,
+	annotateOffsetY: null,
+	annotateSpacing: null,
+	annotateVisible: null,
+	annotatePosition: null,
+	annotateCompact: null,
 };
 
 export function createDefaultTextGroupAppearance(): TextGroupAppearance {

@@ -398,6 +398,17 @@
 	overflow-y: auto;
 }
 
+.ba-annotate-group-settings-tabs {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background-color: var(--background-primary);
+}
+
+.ba-annotate-group-settings-tab-panel[hidden] {
+	display: none;
+}
+
 .ba-annotate-settings-heading {
 	padding: var(--size-4-2) 0;
 	font-weight: var(--font-semibold);

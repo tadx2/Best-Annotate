@@ -35,6 +35,7 @@ const UNDERLINE_ATTRIBUTE = 'data-ba-underline';
 const UNDERLINE_COLOR_ATTRIBUTE = 'data-ba-underline-color';
 const UNDERLINE_THICKNESS_ATTRIBUTE = 'data-ba-underline-thickness';
 const UNDERLINE_OFFSET_ATTRIBUTE = 'data-ba-underline-offset';
+const ANNOTATE_TEXT_ATTRIBUTE = 'data-ba-annotate-text';
 const ANNOTATE_COLOR_ATTRIBUTE = 'data-ba-annotate-color';
 const ANNOTATE_FONT_SIZE_ATTRIBUTE = 'data-ba-annotate-font-size';
 const ANNOTATE_OFFSET_X_ATTRIBUTE = 'data-ba-annotate-offset-x';
@@ -255,53 +256,123 @@ export function createTextGroupElement(
 	const { appearance } = group;
 	const container = doc.createElement('span');
 	container.classList.add('ba-text-group');
-	setInlineStyles(container, {
-		'--ba-text-color': appearance.textColor,
-		'--ba-text-background-color':
-			appearance.textBackgroundColor ?? 'transparent',
-		'--ba-underline-color': appearance.underlineColor,
-		'--ba-underline-thickness': `${appearance.underlineThickness}px`,
-		'--ba-underline-offset': `${appearance.underlineOffset}px`,
-		'--ba-annotate-color': appearance.annotateColor,
-		'--ba-annotate-font-size': `${appearance.annotateFontSize}em`,
-		'--ba-annotate-offset-x': `${appearance.annotateOffsetX}px`,
-		'--ba-annotate-offset-y': `${appearance.annotateOffsetY}px`,
-		'--ba-annotate-spacing': `${appearance.annotateSpacing}px`,
-	});
+	const containerStyles: Record<string, string> = {};
+	addOptionalStyle(containerStyles, '--ba-text-color', appearance.textColor);
+	addOptionalStyle(
+		containerStyles,
+		'--ba-text-background-color',
+		appearance.textBackgroundColor,
+	);
+	addOptionalStyle(
+		containerStyles,
+		'--ba-underline-color',
+		appearance.underlineColor,
+	);
+	addOptionalUnitStyle(
+		containerStyles,
+		'--ba-underline-thickness',
+		appearance.underlineThickness,
+		'px',
+	);
+	addOptionalUnitStyle(
+		containerStyles,
+		'--ba-underline-offset',
+		appearance.underlineOffset,
+		'px',
+	);
+	addOptionalStyle(
+		containerStyles,
+		'--ba-annotate-color',
+		appearance.annotateColor,
+	);
+	addOptionalUnitStyle(
+		containerStyles,
+		'--ba-annotate-font-size',
+		appearance.annotateFontSize,
+		'em',
+	);
+	addOptionalUnitStyle(
+		containerStyles,
+		'--ba-annotate-offset-x',
+		appearance.annotateOffsetX,
+		'px',
+	);
+	addOptionalUnitStyle(
+		containerStyles,
+		'--ba-annotate-offset-y',
+		appearance.annotateOffsetY,
+		'px',
+	);
+	addOptionalUnitStyle(
+		containerStyles,
+		'--ba-annotate-spacing',
+		appearance.annotateSpacing,
+		'px',
+	);
+	if (Object.keys(containerStyles).length > 0) {
+		setInlineStyles(container, containerStyles);
+	}
 	writeAppearanceAttributes(container, appearance);
 
 	if (appearance.annotate) {
 		const ruby = doc.createElement('ruby');
 		ruby.classList.add('ba-text-group-annotation');
-		setInlineStyles(ruby, {
-			'ruby-position': appearance.annotatePosition,
-			'ruby-align': appearance.annotateCompact
+		const rubyStyles: Record<string, string> = {};
+		addOptionalStyle(
+			rubyStyles,
+			'ruby-position',
+			appearance.annotatePosition,
+		);
+		if (appearance.annotateCompact !== null) {
+			rubyStyles['ruby-align'] = appearance.annotateCompact
 				? 'center'
-				: 'space-around',
-		});
+				: 'space-around';
+		}
+		if (Object.keys(rubyStyles).length > 0) {
+			setInlineStyles(ruby, rubyStyles);
+		}
 		ruby.appendChild(createTextGroupBaseElement(doc, appearance, text));
 
 		const annotate = doc.createElement('rt');
 		const annotateCssProps: Record<string, string> = {
-			color: appearance.annotateColor,
-			'font-size': `${appearance.annotateFontSize}em`,
 			'white-space': 'nowrap',
 			'word-break': 'keep-all',
 			'overflow-wrap': 'normal',
 			position: 'relative',
-			left: `${appearance.annotateOffsetX}px`,
-			top: `${appearance.annotateOffsetY}px`,
-			'padding-top':
-				appearance.annotatePosition === 'under'
-					? `${appearance.annotateSpacing}px`
-					: '0',
-			'padding-bottom':
-				appearance.annotatePosition === 'over'
-					? `${appearance.annotateSpacing}px`
-					: '0',
 		};
-		if (!appearance.annotateVisible) annotateCssProps.display = 'none';
-		if (appearance.annotateCompact) {
+		addOptionalStyle(
+			annotateCssProps,
+			'color',
+			appearance.annotateColor,
+		);
+		addOptionalUnitStyle(
+			annotateCssProps,
+			'font-size',
+			appearance.annotateFontSize,
+			'em',
+		);
+		addOptionalUnitStyle(
+			annotateCssProps,
+			'left',
+			appearance.annotateOffsetX,
+			'px',
+		);
+		addOptionalUnitStyle(
+			annotateCssProps,
+			'top',
+			appearance.annotateOffsetY,
+			'px',
+		);
+		if (appearance.annotateSpacing !== null) {
+			const position = appearance.annotatePosition ?? 'over';
+			annotateCssProps[
+				position === 'under' ? 'padding-top' : 'padding-bottom'
+			] = `${appearance.annotateSpacing}px`;
+		}
+		if (appearance.annotateVisible === false) {
+			annotateCssProps.display = 'none';
+		}
+		if (appearance.annotateCompact === true) {
 			annotateCssProps['line-height'] = '1';
 		}
 		setInlineStyles(annotate, annotateCssProps);
@@ -324,23 +395,44 @@ function createTextGroupBaseElement(
 ) {
 	const base = doc.createElement('span');
 	base.classList.add('ba-text-group-base');
-	setInlineStyles(base, {
-		color: appearance.textColor,
-		'background-color':
-			appearance.textBackgroundColor ?? 'transparent',
-	});
+	const baseStyles: Record<string, string> = {};
+	addOptionalStyle(baseStyles, 'color', appearance.textColor);
+	addOptionalStyle(
+		baseStyles,
+		'background-color',
+		appearance.textBackgroundColor,
+	);
+	if (Object.keys(baseStyles).length > 0) {
+		setInlineStyles(base, baseStyles);
+	}
 
-	if (!appearance.underline) {
+	if (appearance.underline !== true) {
 		appendText(base, text);
 		return base;
 	}
 
 	const underline = doc.createElement('u');
-	setInlineStyles(underline, {
-		'text-decoration-color': appearance.underlineColor,
-		'text-decoration-thickness': `${appearance.underlineThickness}px`,
-		'text-underline-offset': `${appearance.underlineOffset}px`,
-	});
+	const underlineStyles: Record<string, string> = {};
+	addOptionalStyle(
+		underlineStyles,
+		'text-decoration-color',
+		appearance.underlineColor,
+	);
+	addOptionalUnitStyle(
+		underlineStyles,
+		'text-decoration-thickness',
+		appearance.underlineThickness,
+		'px',
+	);
+	addOptionalUnitStyle(
+		underlineStyles,
+		'text-underline-offset',
+		appearance.underlineOffset,
+		'px',
+	);
+	if (Object.keys(underlineStyles).length > 0) {
+		setInlineStyles(underline, underlineStyles);
+	}
 	appendText(underline, text);
 	base.appendChild(underline);
 	return base;
@@ -539,98 +631,117 @@ function writeAppearanceAttributes(
 	element: HTMLElement,
 	appearance: TextGroupAppearance,
 ) {
-	element.setAttribute(TEXT_COLOR_ATTRIBUTE, appearance.textColor);
-	element.setAttribute(
+	setOptionalAttribute(element, TEXT_COLOR_ATTRIBUTE, appearance.textColor);
+	setOptionalAttribute(
+		element,
 		TEXT_BACKGROUND_COLOR_ATTRIBUTE,
-		appearance.textBackgroundColor ?? '',
+		appearance.textBackgroundColor,
 	);
-	element.setAttribute(UNDERLINE_ATTRIBUTE, String(appearance.underline));
-	element.setAttribute(UNDERLINE_COLOR_ATTRIBUTE, appearance.underlineColor);
-	element.setAttribute(
+	setOptionalAttribute(element, UNDERLINE_ATTRIBUTE, appearance.underline);
+	setOptionalAttribute(
+		element,
+		UNDERLINE_COLOR_ATTRIBUTE,
+		appearance.underlineColor,
+	);
+	setOptionalAttribute(
+		element,
 		UNDERLINE_THICKNESS_ATTRIBUTE,
-		String(appearance.underlineThickness),
+		appearance.underlineThickness,
 	);
-	element.setAttribute(
+	setOptionalAttribute(
+		element,
 		UNDERLINE_OFFSET_ATTRIBUTE,
-		String(appearance.underlineOffset),
+		appearance.underlineOffset,
 	);
-	element.setAttribute(ANNOTATE_COLOR_ATTRIBUTE, appearance.annotateColor);
-	element.setAttribute(
+	setOptionalAttribute(element, ANNOTATE_TEXT_ATTRIBUTE, appearance.annotate);
+	setOptionalAttribute(
+		element,
+		ANNOTATE_COLOR_ATTRIBUTE,
+		appearance.annotateColor,
+	);
+	setOptionalAttribute(
+		element,
 		ANNOTATE_FONT_SIZE_ATTRIBUTE,
-		String(appearance.annotateFontSize),
+		appearance.annotateFontSize,
 	);
-	element.setAttribute(
+	setOptionalAttribute(
+		element,
 		ANNOTATE_OFFSET_X_ATTRIBUTE,
-		String(appearance.annotateOffsetX),
+		appearance.annotateOffsetX,
 	);
-	element.setAttribute(
+	setOptionalAttribute(
+		element,
 		ANNOTATE_OFFSET_Y_ATTRIBUTE,
-		String(appearance.annotateOffsetY),
+		appearance.annotateOffsetY,
 	);
-	element.setAttribute(
+	setOptionalAttribute(
+		element,
 		ANNOTATE_SPACING_ATTRIBUTE,
-		String(appearance.annotateSpacing),
+		appearance.annotateSpacing,
 	);
-	element.setAttribute(
+	setOptionalAttribute(
+		element,
 		ANNOTATE_VISIBLE_ATTRIBUTE,
-		String(appearance.annotateVisible),
+		appearance.annotateVisible,
 	);
-	element.setAttribute(
+	setOptionalAttribute(
+		element,
 		ANNOTATE_POSITION_ATTRIBUTE,
 		appearance.annotatePosition,
 	);
-	element.setAttribute(
+	setOptionalAttribute(
+		element,
 		ANNOTATE_COMPACT_ATTRIBUTE,
-		String(appearance.annotateCompact),
+		appearance.annotateCompact,
 	);
 }
 
 function readAppearance(element: HTMLElement): TextGroupAppearance {
-	const annotate = element.querySelector(
-		'.ba-text-group-annotation > rt',
-	);
 	return {
-		textColor: getRequiredAttribute(element, TEXT_COLOR_ATTRIBUTE),
-		textBackgroundColor:
-			element.getAttribute(TEXT_BACKGROUND_COLOR_ATTRIBUTE) || null,
-		underline:
-			getRequiredAttribute(element, UNDERLINE_ATTRIBUTE) === 'true',
-		underlineColor: getRequiredAttribute(element, UNDERLINE_COLOR_ATTRIBUTE),
-		underlineThickness: getRequiredNumberAttribute(
+		textColor: element.getAttribute(TEXT_COLOR_ATTRIBUTE),
+		textBackgroundColor: element.getAttribute(
+			TEXT_BACKGROUND_COLOR_ATTRIBUTE,
+		),
+		underline: getOptionalBooleanAttribute(
+			element,
+			UNDERLINE_ATTRIBUTE,
+		),
+		underlineColor: element.getAttribute(UNDERLINE_COLOR_ATTRIBUTE),
+		underlineThickness: getOptionalNumberAttribute(
 			element,
 			UNDERLINE_THICKNESS_ATTRIBUTE,
 		),
-		underlineOffset: getRequiredNumberAttribute(
+		underlineOffset: getOptionalNumberAttribute(
 			element,
 			UNDERLINE_OFFSET_ATTRIBUTE,
 		),
-		annotate: annotate ? readElementText(annotate) : '',
-		annotateColor: getRequiredAttribute(element, ANNOTATE_COLOR_ATTRIBUTE),
-		annotateFontSize: getRequiredNumberAttribute(
+		annotate: element.getAttribute(ANNOTATE_TEXT_ATTRIBUTE),
+		annotateColor: element.getAttribute(ANNOTATE_COLOR_ATTRIBUTE),
+		annotateFontSize: getOptionalNumberAttribute(
 			element,
 			ANNOTATE_FONT_SIZE_ATTRIBUTE,
 		),
-		annotateOffsetX: getRequiredNumberAttribute(
+		annotateOffsetX: getOptionalNumberAttribute(
 			element,
 			ANNOTATE_OFFSET_X_ATTRIBUTE,
 		),
-		annotateOffsetY: getRequiredNumberAttribute(
+		annotateOffsetY: getOptionalNumberAttribute(
 			element,
 			ANNOTATE_OFFSET_Y_ATTRIBUTE,
 		),
-		annotateSpacing: getRequiredNumberAttribute(
+		annotateSpacing: getOptionalNumberAttribute(
 			element,
 			ANNOTATE_SPACING_ATTRIBUTE,
 		),
-		annotateVisible:
-			getRequiredAttribute(element, ANNOTATE_VISIBLE_ATTRIBUTE) ===
-			'true',
-		annotatePosition:
-			getRequiredAttribute(element, ANNOTATE_POSITION_ATTRIBUTE) === 'over'
-				? 'over'
-				: 'under',
-		annotateCompact:
-			getRequiredAttribute(element, ANNOTATE_COMPACT_ATTRIBUTE) === 'true',
+		annotateVisible: getOptionalBooleanAttribute(
+			element,
+			ANNOTATE_VISIBLE_ATTRIBUTE,
+		),
+		annotatePosition: getOptionalAnnotatePosition(element),
+		annotateCompact: getOptionalBooleanAttribute(
+			element,
+			ANNOTATE_COMPACT_ATTRIBUTE,
+		),
 	};
 }
 
@@ -643,21 +754,6 @@ function appendText(container: HTMLElement, text: string) {
 		}
 		container.appendChild(container.ownerDocument.createTextNode(line));
 	});
-}
-
-function readElementText(element: Element) {
-	let text = '';
-	element.childNodes.forEach((node) => {
-		if (node.nodeType === Node.TEXT_NODE) {
-			text += node.textContent ?? '';
-		} else if (
-			node.nodeType === Node.ELEMENT_NODE &&
-			(node as Element).tagName === 'BR'
-		) {
-			text += '\n';
-		}
-	});
-	return text;
 }
 
 function getRequiredAttribute(element: Element, name: string) {
@@ -677,6 +773,30 @@ function getRequiredNumberAttribute(element: Element, name: string) {
 function getOptionalNumberAttribute(element: Element, name: string) {
 	if (!element.hasAttribute(name)) return null;
 	return getRequiredNumberAttribute(element, name);
+}
+
+function getOptionalBooleanAttribute(element: Element, name: string) {
+	const value = element.getAttribute(name);
+	if (value === null) return null;
+	if (value === 'true') return true;
+	if (value === 'false') return false;
+	throw new Error(`Invalid ${name} attribute.`);
+}
+
+function getOptionalAnnotatePosition(element: Element) {
+	const value = element.getAttribute(ANNOTATE_POSITION_ATTRIBUTE);
+	if (value === null) return null;
+	if (value === 'over' || value === 'under') return value;
+	throw new Error(`Invalid ${ANNOTATE_POSITION_ATTRIBUTE} attribute.`);
+}
+
+function setOptionalAttribute(
+	element: HTMLElement,
+	name: string,
+	value: string | number | boolean | null,
+) {
+	if (value === null) return;
+	element.setAttribute(name, String(value));
 }
 
 function applyOptionalPixelStyle(
@@ -699,4 +819,21 @@ function setInlineStyles(
 		.map(([property, propertyValue]) => `${property}: ${propertyValue}`)
 		.join('; ');
 	element.setAttribute('style', `${value};`);
+}
+
+function addOptionalStyle(
+	styles: Record<string, string>,
+	property: string,
+	value: string | null,
+) {
+	if (value !== null) styles[property] = value;
+}
+
+function addOptionalUnitStyle(
+	styles: Record<string, string>,
+	property: string,
+	value: number | null,
+	unit: string,
+) {
+	if (value !== null) styles[property] = `${value}${unit}`;
 }
