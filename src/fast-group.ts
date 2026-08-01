@@ -16,7 +16,7 @@ export interface FastGroupPreset {
 export function createFastGroupPreset(index: number): FastGroupPreset {
 	return {
 		id: crypto.randomUUID(),
-		title: `Fast group ${index}`,
+		title: `Preset ${index}`,
 		description: '',
 		buttonColor: DEFAULT_BUTTON_COLOR,
 		buttonTextColor: DEFAULT_BUTTON_TEXT_COLOR,

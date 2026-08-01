@@ -116,10 +116,10 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 
 		return {
 			type: 'list',
-			heading: 'Fast groups',
-			emptyState: 'No fast groups.',
+			heading: 'Group presets',
+			emptyState: 'No group presets.',
 			addItem: {
-				name: 'Add fast group',
+				name: 'Add group preset',
 				action: () => {
 					void this.addFastGroupPreset(presets);
 				},
@@ -136,8 +136,8 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 			},
 			items: presets.map((preset) => ({
 				type: 'page',
-				name: preset.title || 'Untitled fast group',
-				desc: preset.description || 'Configure this Fast Group preset.',
+				name: preset.title || 'Untitled preset',
+				desc: preset.description || 'Configure this group preset.',
 				items: this.createFastGroupPresetDefinitions(preset),
 			})),
 		};

@@ -251,7 +251,7 @@ export class EditAnnotateModal extends Modal {
 			'ba-annotate-segment-action-row',
 		);
 		this.groupTextButton = new ButtonComponent(groupActions)
-			.setButtonText('Group')
+			.setButtonText('Create group')
 			.onClick(() => this.createTextGroups());
 		this.groupTextButton.buttonEl.addClass(
 			'ba-annotate-group-button',
@@ -273,7 +273,7 @@ export class EditAnnotateModal extends Modal {
 		this.fastGroupButtons.length = 0;
 		for (const preset of this.options.fastGroupPresets ?? []) {
 			const button = new ButtonComponent(fastGroupActions)
-				.setButtonText(preset.title.trim() || 'Fast group')
+				.setButtonText(preset.title.trim() || 'Preset')
 				.onClick(() => this.createTextGroups(preset));
 			button.buttonEl.addClass('ba-annotate-fast-group-button');
 			button.buttonEl.setCssProps({
