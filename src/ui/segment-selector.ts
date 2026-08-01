@@ -228,7 +228,9 @@ export class SegmentSelector {
 		this.notifyChange();
 	}
 
-	private selectTextGroup(index: number) {
+	selectTextGroup(index: number) {
+		if (index < 0 || index >= this.textGroups.length) return;
+
 		this.selectedIndices.clear();
 		this.selectedTextGroupIndex =
 			this.selectedTextGroupIndex === index ? null : index;

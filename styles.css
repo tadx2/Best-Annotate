@@ -46,6 +46,10 @@
 	font-size: var(--font-ui-large);
 }
 
+.ba-annotate-final-preview-group {
+	cursor: pointer;
+}
+
 .ba-annotate-textarea {
 	box-sizing: border-box;
 	resize: none;

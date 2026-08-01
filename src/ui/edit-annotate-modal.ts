@@ -18,6 +18,8 @@ import { CreateAnnotateModal } from './create-annotate-modal';
 import { SegmentSelector } from './segment-selector';
 import { renderTextGroupAppearanceSettings } from './text-group-appearance-settings';
 
+const FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE = 'data-ba-preview-group-index';
+
 export interface EditAnnotateModalOptions {
 	initialText?: string;
 	initialTextGroups?: TextGroup[];
@@ -76,6 +78,16 @@ export class EditAnnotateModal extends Modal {
 		this.finalPreviewEl = finalPreviewSection.createDiv(
 			'ba-annotate-final-preview',
 		);
+		this.finalPreviewEl.addEventListener('click', (event) => {
+			this.selectFinalPreviewGroup(event.target);
+		});
+		this.finalPreviewEl.addEventListener('keydown', (event) => {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			if (!this.getFinalPreviewGroupElement(event.target)) return;
+
+			event.preventDefault();
+			this.selectFinalPreviewGroup(event.target);
+		});
 		const segmentsColumn = layout.createDiv('ba-annotate-column');
 		const groupColumn = layout.createDiv('ba-annotate-column');
 
@@ -254,7 +266,41 @@ export class EditAnnotateModal extends Modal {
 			this.finalPreviewEl,
 			this.text,
 			this.textGroups,
+			{
+				onTextGroupElement: (element, _group, index) => {
+					element.addClass('ba-annotate-final-preview-group');
+					element.setAttribute(
+						FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE,
+						String(index),
+					);
+					element.setAttribute('role', 'button');
+					element.tabIndex = 0;
+				},
+			},
 		);
+	}
+
+	private selectFinalPreviewGroup(target: EventTarget | null) {
+		const element = this.getFinalPreviewGroupElement(target);
+		if (!element) return;
+
+		const index = Number(
+			element.getAttribute(FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE),
+		);
+		if (Number.isInteger(index)) {
+			this.segmentSelector.selectTextGroup(index);
+		}
+	}
+
+	private getFinalPreviewGroupElement(target: EventTarget | null) {
+		if (!(target instanceof Element)) return null;
+
+		const element = target.closest<HTMLElement>(
+			`[${FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE}]`,
+		);
+		return element && this.finalPreviewEl.contains(element)
+			? element
+			: null;
 	}
 
 	private renderGroupSettings() {

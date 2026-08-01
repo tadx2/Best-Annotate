@@ -16,6 +16,14 @@ export interface AnnotateContent {
 	textGroups: TextGroup[];
 }
 
+export interface AppendAnnotatedTextOptions {
+	onTextGroupElement?: (
+		element: HTMLElement,
+		group: TextGroup,
+		index: number,
+	) => void;
+}
+
 export function createAnnotateElement(
 	doc: Document,
 	id: string,
@@ -88,28 +96,30 @@ export function appendAnnotatedText(
 	container: HTMLElement,
 	text: string,
 	textGroups: TextGroup[],
+	options: AppendAnnotatedTextOptions = {},
 ) {
 	const groups = textGroups
+		.map((group, index) => ({ group, index }))
 		.filter(
-			(group) =>
+			({ group }) =>
 				group.start >= 0 &&
 				group.end > group.start &&
 				group.end <= text.length,
 		)
-		.sort((a, b) => a.start - b.start);
+		.sort((a, b) => a.group.start - b.group.start);
 	let cursor = 0;
 
-	for (const group of groups) {
+	for (const { group, index } of groups) {
 		if (group.start < cursor) continue;
 
 		appendText(container, text.slice(cursor, group.start));
-		container.appendChild(
-			createTextGroupElement(
-				container.ownerDocument,
-				group,
-				text.slice(group.start, group.end),
-			),
+		const element = createTextGroupElement(
+			container.ownerDocument,
+			group,
+			text.slice(group.start, group.end),
 		);
+		options.onTextGroupElement?.(element, group, index);
+		container.appendChild(element);
 		cursor = group.end;
 	}
 
