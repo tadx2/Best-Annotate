@@ -184,8 +184,16 @@
 	ruby-position: over;
 }
 
+.ba-text-group[data-ba-annotate-position='over'] rt {
+	padding-bottom: var(--ba-annotate-spacing);
+}
+
 .ba-text-group[data-ba-annotate-position='under'] {
 	ruby-position: under;
+}
+
+.ba-text-group[data-ba-annotate-position='under'] rt {
+	padding-top: var(--ba-annotate-spacing);
 }
 
 .ba-text-group[data-ba-annotate-visible='false'] rt {

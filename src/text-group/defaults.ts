@@ -6,6 +6,7 @@ export const DEFAULT_UNDERLINE_OFFSET = 2;
 export const DEFAULT_ANNOTATE_FONT_SIZE = 0.55;
 export const DEFAULT_ANNOTATE_OFFSET_X = 0;
 export const DEFAULT_ANNOTATE_OFFSET_Y = 0;
+export const DEFAULT_ANNOTATE_SPACING = 0;
 
 export const DEFAULT_TEXT_GROUP_APPEARANCE: TextGroupAppearance = {
 	textColor: DEFAULT_GROUP_COLOR,
@@ -19,6 +20,7 @@ export const DEFAULT_TEXT_GROUP_APPEARANCE: TextGroupAppearance = {
 	annotateFontSize: DEFAULT_ANNOTATE_FONT_SIZE,
 	annotateOffsetX: DEFAULT_ANNOTATE_OFFSET_X,
 	annotateOffsetY: DEFAULT_ANNOTATE_OFFSET_Y,
+	annotateSpacing: DEFAULT_ANNOTATE_SPACING,
 	annotateVisible: true,
 	annotatePosition: 'under',
 	annotateCompact: true,

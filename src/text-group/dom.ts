@@ -12,6 +12,7 @@ const ANNOTATE_COLOR_ATTRIBUTE = 'data-ba-annotate-color';
 const ANNOTATE_FONT_SIZE_ATTRIBUTE = 'data-ba-annotate-font-size';
 const ANNOTATE_OFFSET_X_ATTRIBUTE = 'data-ba-annotate-offset-x';
 const ANNOTATE_OFFSET_Y_ATTRIBUTE = 'data-ba-annotate-offset-y';
+const ANNOTATE_SPACING_ATTRIBUTE = 'data-ba-annotate-spacing';
 const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
 const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
 const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
@@ -60,6 +61,7 @@ export function createTextGroupElement(
 		'--ba-annotate-font-size': `${appearance.annotateFontSize}em`,
 		'--ba-annotate-offset-x': `${appearance.annotateOffsetX}px`,
 		'--ba-annotate-offset-y': `${appearance.annotateOffsetY}px`,
+		'--ba-annotate-spacing': `${appearance.annotateSpacing}px`,
 		'ruby-position': appearance.annotatePosition,
 		'ruby-align': appearance.annotateCompact ? 'center' : 'space-around',
 	});
@@ -94,6 +96,14 @@ export function createTextGroupElement(
 			position: 'relative',
 			left: `${appearance.annotateOffsetX}px`,
 			top: `${appearance.annotateOffsetY}px`,
+			'padding-top':
+				appearance.annotatePosition === 'under'
+					? `${appearance.annotateSpacing}px`
+					: '0',
+			'padding-bottom':
+				appearance.annotatePosition === 'over'
+					? `${appearance.annotateSpacing}px`
+					: '0',
 		};
 		if (!appearance.annotateVisible) annotateCssProps.display = 'none';
 		if (appearance.annotateCompact) {
@@ -212,6 +222,10 @@ function writeAppearanceAttributes(
 		String(appearance.annotateOffsetY),
 	);
 	ruby.setAttribute(
+		ANNOTATE_SPACING_ATTRIBUTE,
+		String(appearance.annotateSpacing),
+	);
+	ruby.setAttribute(
 		ANNOTATE_VISIBLE_ATTRIBUTE,
 		String(appearance.annotateVisible),
 	);
@@ -256,6 +270,10 @@ function readAppearance(ruby: HTMLElement): TextGroupAppearance {
 		annotateOffsetY: getRequiredNumberAttribute(
 			ruby,
 			ANNOTATE_OFFSET_Y_ATTRIBUTE,
+		),
+		annotateSpacing: getRequiredNumberAttribute(
+			ruby,
+			ANNOTATE_SPACING_ATTRIBUTE,
 		),
 		annotateVisible:
 			getRequiredAttribute(ruby, ANNOTATE_VISIBLE_ATTRIBUTE) === 'true',

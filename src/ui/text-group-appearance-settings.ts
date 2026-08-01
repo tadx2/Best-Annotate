@@ -216,6 +216,23 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 	},
 	{
 		section: 'Annotate',
+		name: 'Annotate spacing',
+		render: (setting, appearance, onChange) => {
+			setting.addSlider((slider) => {
+				slider
+					.setLimits(0, 20, 1)
+					.setValue(appearance.annotateSpacing)
+					.setDisplayFormat((value) => `${value}px`)
+					.setInstant(true)
+					.onChange((value) => {
+						appearance.annotateSpacing = value;
+						return onChange();
+					});
+			});
+		},
+	},
+	{
+		section: 'Annotate',
 		name: 'Show annotate',
 		render: (setting, appearance, onChange) => {
 			setting.addToggle((toggle) => {
