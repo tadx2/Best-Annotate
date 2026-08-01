@@ -191,7 +191,7 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 			},
 			{
 				name: 'Description',
-				desc: 'Optional tooltip for the Fast Group button.',
+				desc: 'Optional tooltip for the preset button.',
 				render: (setting: Setting) => {
 					setting.addText((input) => {
 						input
