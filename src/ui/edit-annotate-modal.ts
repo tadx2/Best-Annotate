@@ -11,8 +11,10 @@ import { AnnotateBlockAppearance } from '../annotate-block/types';
 import { createFastGroupPreset, FastGroupPreset } from '../fast-group';
 import {
 	FinalPreviewSettings,
+	htmlContentsAreEqual,
 	renderHtmlDiff,
 } from '../final-preview';
+import { formatHtml } from '../html-formatter';
 import {
 	appendAnnotatedText,
 	createAnnotateElement,
@@ -759,6 +761,7 @@ export class EditAnnotateModal extends Modal {
 			this.finalPreviewMode === 'html',
 		);
 		if (this.finalPreviewMode === 'html') {
+			const formattedCurrentHtml = formatHtml(currentHtml);
 			const pre = this.finalPreviewEl.createEl('pre', {
 				cls: 'ba-annotate-final-preview-source',
 			});
@@ -766,12 +769,12 @@ export class EditAnnotateModal extends Modal {
 			if (this.shouldHighlightHtml(currentHtml)) {
 				renderHtmlDiff(
 					code,
-					this.htmlDiffBefore,
-					currentHtml,
+					formatHtml(this.htmlDiffBefore),
+					formattedCurrentHtml,
 					this.options.finalPreviewSettings,
 				);
 			} else {
-				code.setText(currentHtml);
+				code.setText(formattedCurrentHtml);
 			}
 			return;
 		}
@@ -812,7 +815,10 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private updateHtmlHighlight(currentHtml: string) {
-		if (currentHtml === this.lastPreviewHtml) return;
+		if (htmlContentsAreEqual(currentHtml, this.lastPreviewHtml)) {
+			this.lastPreviewHtml = currentHtml;
+			return;
+		}
 		this.htmlDiffBefore = this.lastPreviewHtml;
 		this.lastPreviewHtml = currentHtml;
 		if (this.htmlHighlightTimer !== null) {
@@ -836,7 +842,7 @@ export class EditAnnotateModal extends Modal {
 
 	private shouldHighlightHtml(currentHtml: string) {
 		return (
-			currentHtml !== this.htmlDiffBefore &&
+			!htmlContentsAreEqual(currentHtml, this.htmlDiffBefore) &&
 			Date.now() < this.htmlHighlightExpiresAt
 		);
 	}
