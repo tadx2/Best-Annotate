@@ -163,6 +163,59 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 	},
 	{
 		section: 'Annotate',
+		name: 'Annotate size',
+		render: (setting, appearance, onChange) => {
+			setting.addSlider((slider) => {
+				slider
+					.setLimits(0.3, 2, 0.05)
+					.setValue(appearance.annotateFontSize)
+					.setDisplayFormat(
+						(value) => `${Math.round(value * 100)}%`,
+					)
+					.setInstant(true)
+					.onChange((value) => {
+						appearance.annotateFontSize = value;
+						return onChange();
+					});
+			});
+		},
+	},
+	{
+		section: 'Annotate',
+		name: 'Horizontal position',
+		render: (setting, appearance, onChange) => {
+			setting.addSlider((slider) => {
+				slider
+					.setLimits(-20, 20, 1)
+					.setValue(appearance.annotateOffsetX)
+					.setDisplayFormat((value) => `${value}px`)
+					.setInstant(true)
+					.onChange((value) => {
+						appearance.annotateOffsetX = value;
+						return onChange();
+					});
+			});
+		},
+	},
+	{
+		section: 'Annotate',
+		name: 'Vertical position',
+		render: (setting, appearance, onChange) => {
+			setting.addSlider((slider) => {
+				slider
+					.setLimits(-20, 20, 1)
+					.setValue(appearance.annotateOffsetY)
+					.setDisplayFormat((value) => `${value}px`)
+					.setInstant(true)
+					.onChange((value) => {
+						appearance.annotateOffsetY = value;
+						return onChange();
+					});
+			});
+		},
+	},
+	{
+		section: 'Annotate',
 		name: 'Show annotate',
 		render: (setting, appearance, onChange) => {
 			setting.addToggle((toggle) => {

@@ -9,6 +9,9 @@ const UNDERLINE_COLOR_ATTRIBUTE = 'data-ba-underline-color';
 const UNDERLINE_THICKNESS_ATTRIBUTE = 'data-ba-underline-thickness';
 const UNDERLINE_OFFSET_ATTRIBUTE = 'data-ba-underline-offset';
 const ANNOTATE_COLOR_ATTRIBUTE = 'data-ba-annotate-color';
+const ANNOTATE_FONT_SIZE_ATTRIBUTE = 'data-ba-annotate-font-size';
+const ANNOTATE_OFFSET_X_ATTRIBUTE = 'data-ba-annotate-offset-x';
+const ANNOTATE_OFFSET_Y_ATTRIBUTE = 'data-ba-annotate-offset-y';
 const ANNOTATE_VISIBLE_ATTRIBUTE = 'data-ba-annotate-visible';
 const ANNOTATE_POSITION_ATTRIBUTE = 'data-ba-annotate-position';
 const ANNOTATE_COMPACT_ATTRIBUTE = 'data-ba-annotate-compact';
@@ -54,6 +57,9 @@ export function createTextGroupElement(
 		'--ba-underline-thickness': `${appearance.underlineThickness}px`,
 		'--ba-underline-offset': `${appearance.underlineOffset}px`,
 		'--ba-annotate-color': appearance.annotateColor,
+		'--ba-annotate-font-size': `${appearance.annotateFontSize}em`,
+		'--ba-annotate-offset-x': `${appearance.annotateOffsetX}px`,
+		'--ba-annotate-offset-y': `${appearance.annotateOffsetY}px`,
 		'ruby-position': appearance.annotatePosition,
 		'ruby-align': appearance.annotateCompact ? 'center' : 'space-around',
 	});
@@ -84,10 +90,13 @@ export function createTextGroupElement(
 		const annotate = doc.createElement('rt');
 		const annotateCssProps: Record<string, string> = {
 			color: appearance.annotateColor,
+			'font-size': `${appearance.annotateFontSize}em`,
+			position: 'relative',
+			left: `${appearance.annotateOffsetX}px`,
+			top: `${appearance.annotateOffsetY}px`,
 		};
 		if (!appearance.annotateVisible) annotateCssProps.display = 'none';
 		if (appearance.annotateCompact) {
-			annotateCssProps['font-size'] = '0.55em';
 			annotateCssProps['line-height'] = '1';
 		}
 		setInlineStyles(annotate, annotateCssProps);
@@ -191,6 +200,18 @@ function writeAppearanceAttributes(
 	);
 	ruby.setAttribute(ANNOTATE_COLOR_ATTRIBUTE, appearance.annotateColor);
 	ruby.setAttribute(
+		ANNOTATE_FONT_SIZE_ATTRIBUTE,
+		String(appearance.annotateFontSize),
+	);
+	ruby.setAttribute(
+		ANNOTATE_OFFSET_X_ATTRIBUTE,
+		String(appearance.annotateOffsetX),
+	);
+	ruby.setAttribute(
+		ANNOTATE_OFFSET_Y_ATTRIBUTE,
+		String(appearance.annotateOffsetY),
+	);
+	ruby.setAttribute(
 		ANNOTATE_VISIBLE_ATTRIBUTE,
 		String(appearance.annotateVisible),
 	);
@@ -224,6 +245,18 @@ function readAppearance(ruby: HTMLElement): TextGroupAppearance {
 		),
 		annotate: annotate ? readElementText(annotate) : '',
 		annotateColor: getRequiredAttribute(ruby, ANNOTATE_COLOR_ATTRIBUTE),
+		annotateFontSize: getRequiredNumberAttribute(
+			ruby,
+			ANNOTATE_FONT_SIZE_ATTRIBUTE,
+		),
+		annotateOffsetX: getRequiredNumberAttribute(
+			ruby,
+			ANNOTATE_OFFSET_X_ATTRIBUTE,
+		),
+		annotateOffsetY: getRequiredNumberAttribute(
+			ruby,
+			ANNOTATE_OFFSET_Y_ATTRIBUTE,
+		),
 		annotateVisible:
 			getRequiredAttribute(ruby, ANNOTATE_VISIBLE_ATTRIBUTE) === 'true',
 		annotatePosition:

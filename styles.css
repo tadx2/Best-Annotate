@@ -174,6 +174,10 @@
 
 .ba-text-group rt {
 	color: var(--ba-annotate-color);
+	font-size: var(--ba-annotate-font-size);
+	position: relative;
+	left: var(--ba-annotate-offset-x);
+	top: var(--ba-annotate-offset-y);
 }
 
 .ba-text-group[data-ba-annotate-position='over'] {
@@ -193,7 +197,6 @@
 }
 
 .ba-text-group[data-ba-annotate-compact='true'] rt {
-	font-size: 0.55em;
 	line-height: 1;
 }
 

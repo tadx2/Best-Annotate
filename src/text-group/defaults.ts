@@ -3,6 +3,9 @@ import { TextGroupAppearance } from './types';
 export const DEFAULT_GROUP_COLOR = '#000000';
 export const DEFAULT_UNDERLINE_THICKNESS = 1;
 export const DEFAULT_UNDERLINE_OFFSET = 2;
+export const DEFAULT_ANNOTATE_FONT_SIZE = 0.55;
+export const DEFAULT_ANNOTATE_OFFSET_X = 0;
+export const DEFAULT_ANNOTATE_OFFSET_Y = 0;
 
 export const DEFAULT_TEXT_GROUP_APPEARANCE: TextGroupAppearance = {
 	textColor: DEFAULT_GROUP_COLOR,
@@ -13,6 +16,9 @@ export const DEFAULT_TEXT_GROUP_APPEARANCE: TextGroupAppearance = {
 	underlineOffset: DEFAULT_UNDERLINE_OFFSET,
 	annotate: '',
 	annotateColor: DEFAULT_GROUP_COLOR,
+	annotateFontSize: DEFAULT_ANNOTATE_FONT_SIZE,
+	annotateOffsetX: DEFAULT_ANNOTATE_OFFSET_X,
+	annotateOffsetY: DEFAULT_ANNOTATE_OFFSET_Y,
 	annotateVisible: true,
 	annotatePosition: 'under',
 	annotateCompact: true,

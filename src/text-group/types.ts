@@ -7,6 +7,9 @@ export interface TextGroupAppearance {
 	underlineOffset: number;
 	annotate: string;
 	annotateColor: string;
+	annotateFontSize: number;
+	annotateOffsetX: number;
+	annotateOffsetY: number;
 	annotateVisible: boolean;
 	annotatePosition: 'over' | 'under';
 	annotateCompact: boolean;
