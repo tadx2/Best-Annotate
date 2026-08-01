@@ -1,4 +1,5 @@
 import {
+	ColorComponent,
 	DropdownComponent,
 	Setting,
 	SettingDefinitionGroup,
@@ -17,7 +18,18 @@ export interface AnnotateBlockAppearanceSettingsOptions {
 type AnnotateBlockNumberKey =
 	| 'fontSize'
 	| 'paragraphMaxWidth'
-	| 'lineHeight';
+	| 'lineHeight'
+	| 'paragraphMarginTop'
+	| 'paragraphMarginRight'
+	| 'paragraphMarginBottom'
+	| 'paragraphMarginLeft'
+	| 'paragraphPaddingTop'
+	| 'paragraphPaddingRight'
+	| 'paragraphPaddingBottom'
+	| 'paragraphPaddingLeft'
+	| 'borderSize';
+
+type AnnotateBlockColorKey = 'textColor' | 'borderColor';
 
 type AnnotateBlockAlignmentKey =
 	| 'textAlignment'
@@ -33,6 +45,14 @@ interface AnnotateBlockAppearanceSettingSpec {
 	step: number;
 	format: (value: number) => string;
 }
+
+interface AnnotateBlockColorSettingSpec {
+	name: string;
+	desc: string;
+	key: AnnotateBlockColorKey;
+}
+
+const DEFAULT_ANNOTATE_BLOCK_COLOR = '#000000';
 
 const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpec[] = [
 	{
@@ -65,6 +85,109 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		step: 0.1,
 		format: (value) => value.toFixed(1),
 	},
+	{
+		name: 'Margin top',
+		desc: 'Override the spacing above the paragraph.',
+		key: 'paragraphMarginTop',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Margin right',
+		desc: 'Override the spacing to the right of the paragraph.',
+		key: 'paragraphMarginRight',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Margin bottom',
+		desc: 'Override the spacing below the paragraph.',
+		key: 'paragraphMarginBottom',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Margin left',
+		desc: 'Override the spacing to the left of the paragraph.',
+		key: 'paragraphMarginLeft',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Padding top',
+		desc: 'Override the spacing inside the top of the paragraph.',
+		key: 'paragraphPaddingTop',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Padding right',
+		desc: 'Override the spacing inside the right of the paragraph.',
+		key: 'paragraphPaddingRight',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Padding bottom',
+		desc: 'Override the spacing inside the bottom of the paragraph.',
+		key: 'paragraphPaddingBottom',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Padding left',
+		desc: 'Override the spacing inside the left of the paragraph.',
+		key: 'paragraphPaddingLeft',
+		initialValue: 8,
+		min: 0,
+		max: 64,
+		step: 1,
+		format: (value) => `${value}px`,
+	},
+	{
+		name: 'Border size',
+		desc: 'Add a solid border and override its width.',
+		key: 'borderSize',
+		initialValue: 1,
+		min: 0.5,
+		max: 10,
+		step: 0.5,
+		format: (value) => `${value}px`,
+	},
+];
+
+const ANNOTATE_BLOCK_COLOR_SETTING_SPECS: AnnotateBlockColorSettingSpec[] = [
+	{
+		name: 'Text color',
+		desc: 'Override the inherited paragraph text color.',
+		key: 'textColor',
+	},
+	{
+		name: 'Border color',
+		desc: 'Override the paragraph border color.',
+		key: 'borderColor',
+	},
 ];
 
 export function renderAnnotateBlockAppearanceSettings(
@@ -84,6 +207,12 @@ export function renderAnnotateBlockAppearanceSettings(
 			options.onChange,
 			() => refreshAlignmentState(),
 		);
+	}
+	for (const spec of ANNOTATE_BLOCK_COLOR_SETTING_SPECS) {
+		const setting = new Setting(container)
+			.setName(spec.name)
+			.setDesc(spec.desc);
+		renderColorSetting(setting, appearance, spec, options.onChange);
 	}
 
 	const textAlignmentSetting = new Setting(container)
@@ -129,6 +258,18 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 						spec,
 						options.onChange,
 						() => refreshAlignmentState(),
+					);
+				},
+			})),
+			...ANNOTATE_BLOCK_COLOR_SETTING_SPECS.map((spec) => ({
+				name: spec.name,
+				desc: spec.desc,
+				render: (setting: Setting) => {
+					renderColorSetting(
+						setting,
+						appearance,
+						spec,
+						options.onChange,
 					);
 				},
 			})),
@@ -194,6 +335,44 @@ function renderNumberSetting(
 				.setDisplayFormat(spec.format)
 				.setInstant(true)
 				.setDisabled(!hasOverride)
+				.onChange((value) => {
+					if (appearance[spec.key] === null) return;
+					appearance[spec.key] = value;
+					return onChange();
+				});
+		});
+}
+
+function renderColorSetting(
+	setting: Setting,
+	appearance: AnnotateBlockAppearance,
+	spec: AnnotateBlockColorSettingSpec,
+	onChange: () => void | Promise<void>,
+) {
+	const hasOverride = appearance[spec.key] !== null;
+	let colorPicker: ColorComponent | null = null;
+	let colorInput: HTMLInputElement | null = null;
+
+	setting
+		.addToggle((toggle) => {
+			toggle.setValue(hasOverride).onChange((enabled) => {
+				if (colorInput) colorInput.disabled = !enabled;
+				appearance[spec.key] = enabled
+					? colorPicker?.getValue() ?? DEFAULT_ANNOTATE_BLOCK_COLOR
+					: null;
+				return onChange();
+			});
+		})
+		.addColorPicker((component) => {
+			colorPicker = component;
+			colorInput = setting.controlEl.querySelector(
+				'input[type="color"]',
+			);
+			if (colorInput) colorInput.disabled = !hasOverride;
+			component
+				.setValue(
+					appearance[spec.key] ?? DEFAULT_ANNOTATE_BLOCK_COLOR,
+				)
 				.onChange((value) => {
 					if (appearance[spec.key] === null) return;
 					appearance[spec.key] = value;

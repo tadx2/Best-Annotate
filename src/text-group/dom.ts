@@ -7,9 +7,20 @@ import { TextGroup, TextGroupAppearance } from './types';
 export const ANNOTATE_ID_ATTRIBUTE = 'data-ba-annotate-id';
 
 const BLOCK_FONT_SIZE_ATTRIBUTE = 'data-ba-block-font-size';
+const BLOCK_TEXT_COLOR_ATTRIBUTE = 'data-ba-block-text-color';
 const BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE =
 	'data-ba-block-paragraph-max-width';
 const BLOCK_LINE_HEIGHT_ATTRIBUTE = 'data-ba-block-line-height';
+const BLOCK_MARGIN_TOP_ATTRIBUTE = 'data-ba-block-margin-top';
+const BLOCK_MARGIN_RIGHT_ATTRIBUTE = 'data-ba-block-margin-right';
+const BLOCK_MARGIN_BOTTOM_ATTRIBUTE = 'data-ba-block-margin-bottom';
+const BLOCK_MARGIN_LEFT_ATTRIBUTE = 'data-ba-block-margin-left';
+const BLOCK_PADDING_TOP_ATTRIBUTE = 'data-ba-block-padding-top';
+const BLOCK_PADDING_RIGHT_ATTRIBUTE = 'data-ba-block-padding-right';
+const BLOCK_PADDING_BOTTOM_ATTRIBUTE = 'data-ba-block-padding-bottom';
+const BLOCK_PADDING_LEFT_ATTRIBUTE = 'data-ba-block-padding-left';
+const BLOCK_BORDER_SIZE_ATTRIBUTE = 'data-ba-block-border-size';
+const BLOCK_BORDER_COLOR_ATTRIBUTE = 'data-ba-block-border-color';
 const BLOCK_TEXT_ALIGNMENT_ATTRIBUTE = 'data-ba-block-text-alignment';
 const BLOCK_PARAGRAPH_ALIGNMENT_ATTRIBUTE =
 	'data-ba-block-paragraph-alignment';
@@ -70,6 +81,10 @@ export function applyAnnotateBlockAppearance(
 		);
 		styles['font-size'] = `${appearance.fontSize}px`;
 	}
+	if (appearance.textColor !== null) {
+		element.setAttribute(BLOCK_TEXT_COLOR_ATTRIBUTE, appearance.textColor);
+		styles.color = appearance.textColor;
+	}
 	if (appearance.paragraphMaxWidth !== null) {
 		element.setAttribute(
 			BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE,
@@ -85,6 +100,77 @@ export function applyAnnotateBlockAppearance(
 			String(appearance.lineHeight),
 		);
 		styles['line-height'] = String(appearance.lineHeight);
+	}
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_MARGIN_TOP_ATTRIBUTE,
+		'margin-top',
+		appearance.paragraphMarginTop,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_MARGIN_RIGHT_ATTRIBUTE,
+		'margin-right',
+		appearance.paragraphMarginRight,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_MARGIN_BOTTOM_ATTRIBUTE,
+		'margin-bottom',
+		appearance.paragraphMarginBottom,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_MARGIN_LEFT_ATTRIBUTE,
+		'margin-left',
+		appearance.paragraphMarginLeft,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_PADDING_TOP_ATTRIBUTE,
+		'padding-top',
+		appearance.paragraphPaddingTop,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_PADDING_RIGHT_ATTRIBUTE,
+		'padding-right',
+		appearance.paragraphPaddingRight,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_PADDING_BOTTOM_ATTRIBUTE,
+		'padding-bottom',
+		appearance.paragraphPaddingBottom,
+	);
+	applyOptionalPixelStyle(
+		element,
+		styles,
+		BLOCK_PADDING_LEFT_ATTRIBUTE,
+		'padding-left',
+		appearance.paragraphPaddingLeft,
+	);
+	if (appearance.borderSize !== null) {
+		element.setAttribute(
+			BLOCK_BORDER_SIZE_ATTRIBUTE,
+			String(appearance.borderSize),
+		);
+		styles['border-style'] = 'solid';
+		styles['border-width'] = `${appearance.borderSize}px`;
+	}
+	if (appearance.borderColor !== null) {
+		element.setAttribute(
+			BLOCK_BORDER_COLOR_ATTRIBUTE,
+			appearance.borderColor,
+		);
+		styles['border-color'] = appearance.borderColor;
 	}
 	if (appearance.textAlignment !== null) {
 		element.setAttribute(
@@ -314,6 +400,7 @@ function readAnnotateBlockAppearance(
 			annotate,
 			BLOCK_FONT_SIZE_ATTRIBUTE,
 		),
+		textColor: annotate.getAttribute(BLOCK_TEXT_COLOR_ATTRIBUTE),
 		paragraphMaxWidth: getOptionalNumberAttribute(
 			annotate,
 			BLOCK_PARAGRAPH_MAX_WIDTH_ATTRIBUTE,
@@ -322,6 +409,43 @@ function readAnnotateBlockAppearance(
 			annotate,
 			BLOCK_LINE_HEIGHT_ATTRIBUTE,
 		),
+		paragraphMarginTop: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_MARGIN_TOP_ATTRIBUTE,
+		),
+		paragraphMarginRight: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_MARGIN_RIGHT_ATTRIBUTE,
+		),
+		paragraphMarginBottom: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_MARGIN_BOTTOM_ATTRIBUTE,
+		),
+		paragraphMarginLeft: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_MARGIN_LEFT_ATTRIBUTE,
+		),
+		paragraphPaddingTop: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_PADDING_TOP_ATTRIBUTE,
+		),
+		paragraphPaddingRight: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_PADDING_RIGHT_ATTRIBUTE,
+		),
+		paragraphPaddingBottom: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_PADDING_BOTTOM_ATTRIBUTE,
+		),
+		paragraphPaddingLeft: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_PADDING_LEFT_ATTRIBUTE,
+		),
+		borderSize: getOptionalNumberAttribute(
+			annotate,
+			BLOCK_BORDER_SIZE_ATTRIBUTE,
+		),
+		borderColor: annotate.getAttribute(BLOCK_BORDER_COLOR_ATTRIBUTE),
 		textAlignment: getOptionalAlignmentAttribute(
 			annotate,
 			BLOCK_TEXT_ALIGNMENT_ATTRIBUTE,
@@ -487,6 +611,18 @@ function getRequiredNumberAttribute(element: Element, name: string) {
 function getOptionalNumberAttribute(element: Element, name: string) {
 	if (!element.hasAttribute(name)) return null;
 	return getRequiredNumberAttribute(element, name);
+}
+
+function applyOptionalPixelStyle(
+	element: HTMLElement,
+	styles: Record<string, string>,
+	attribute: string,
+	property: string,
+	value: number | null,
+) {
+	if (value === null) return;
+	element.setAttribute(attribute, String(value));
+	styles[property] = `${value}px`;
 }
 
 function setInlineStyles(
