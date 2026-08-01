@@ -102,16 +102,48 @@ export class EditAnnotateModal extends Modal {
 			event.preventDefault();
 			this.selectFinalPreviewGroup(event.target);
 		});
-		const paragraphSettingHeader = finalPreviewSection.createDiv(
+		const paragraphSettingSection = layout.createDiv(
+			'ba-annotate-paragraph-setting-section',
+		);
+		const paragraphSettingHeader = paragraphSettingSection.createDiv(
 			'ba-annotate-section-header',
 		);
-		paragraphSettingHeader.createDiv({
+		const paragraphSettingTitle = paragraphSettingHeader.createDiv(
+			'ba-annotate-section-title',
+		);
+		paragraphSettingTitle.createDiv({
 			cls: 'ba-annotate-section-label',
 			text: 'Paragraph Setting',
 		});
-		const annotateStyleSettingsEl = finalPreviewSection.createDiv(
+		const annotateStyleSettingsEl = paragraphSettingSection.createDiv(
 			'ba-annotate-block-style-settings',
 		);
+		let paragraphSettingExpanded = true;
+		const paragraphSettingToggle = new ButtonComponent(
+			paragraphSettingTitle,
+		)
+			.setIcon('chevron-up')
+			.setTooltip('Collapse paragraph settings')
+			.onClick(() => {
+				paragraphSettingExpanded = !paragraphSettingExpanded;
+				annotateStyleSettingsEl.hidden = !paragraphSettingExpanded;
+				paragraphSettingToggle
+					.setIcon(
+						paragraphSettingExpanded
+							? 'chevron-up'
+							: 'chevron-down',
+					)
+					.setTooltip(
+						paragraphSettingExpanded
+							? 'Collapse paragraph settings'
+							: 'Expand paragraph settings',
+					);
+				paragraphSettingToggle.buttonEl.setAttribute(
+					'aria-expanded',
+					String(paragraphSettingExpanded),
+				);
+			});
+		paragraphSettingToggle.buttonEl.setAttribute('aria-expanded', 'true');
 		const textContentSetting = new Setting(annotateStyleSettingsEl)
 			.setName('Text content')
 			.setDesc(

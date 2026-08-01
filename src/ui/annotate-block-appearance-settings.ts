@@ -60,8 +60,8 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		desc: 'Override the inherited text size.',
 		key: 'fontSize',
 		initialValue: 16,
-		min: 10,
-		max: 32,
+		min: 8,
+		max: 72,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -70,8 +70,8 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		desc: 'Override the inherited paragraph maximum width.',
 		key: 'paragraphMaxWidth',
 		initialValue: 640,
-		min: 240,
-		max: 1200,
+		min: 160,
+		max: 2000,
 		step: 20,
 		format: (value) => `${value}px`,
 	},
@@ -80,8 +80,8 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		desc: 'Override the inherited line height.',
 		key: 'lineHeight',
 		initialValue: 1.8,
-		min: 1,
-		max: 3,
+		min: 0.8,
+		max: 5,
 		step: 0.1,
 		format: (value) => value.toFixed(1),
 	},
@@ -91,7 +91,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphMarginTop',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -101,7 +101,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphMarginRight',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -111,7 +111,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphMarginBottom',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -121,7 +121,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphMarginLeft',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -131,7 +131,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphPaddingTop',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -141,7 +141,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphPaddingRight',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -151,7 +151,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphPaddingBottom',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -161,7 +161,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'paragraphPaddingLeft',
 		initialValue: 8,
 		min: 0,
-		max: 64,
+		max: 200,
 		step: 1,
 		format: (value) => `${value}px`,
 	},
@@ -171,7 +171,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		key: 'borderSize',
 		initialValue: 1,
 		min: 0.5,
-		max: 10,
+		max: 20,
 		step: 0.5,
 		format: (value) => `${value}px`,
 	},
@@ -314,19 +314,6 @@ function renderNumberSetting(
 	let slider: SliderComponent | null = null;
 
 	setting
-		.addToggle((toggle) => {
-			toggle.setValue(hasOverride).onChange((enabled) => {
-				slider?.setDisabled(!enabled);
-				appearance[spec.key] = enabled
-					? slider?.getValue() ?? spec.initialValue
-					: null;
-				if (spec.key === 'paragraphMaxWidth') {
-					if (!enabled) appearance.paragraphAlignment = null;
-					onMaxWidthChange();
-				}
-				return onChange();
-			});
-		})
 		.addSlider((component) => {
 			slider = component;
 			component
@@ -340,6 +327,19 @@ function renderNumberSetting(
 					appearance[spec.key] = value;
 					return onChange();
 				});
+		})
+		.addToggle((toggle) => {
+			toggle.setValue(hasOverride).onChange((enabled) => {
+				slider?.setDisabled(!enabled);
+				appearance[spec.key] = enabled
+					? slider?.getValue() ?? spec.initialValue
+					: null;
+				if (spec.key === 'paragraphMaxWidth') {
+					if (!enabled) appearance.paragraphAlignment = null;
+					onMaxWidthChange();
+				}
+				return onChange();
+			});
 		});
 }
 
@@ -354,15 +354,6 @@ function renderColorSetting(
 	let colorInput: HTMLInputElement | null = null;
 
 	setting
-		.addToggle((toggle) => {
-			toggle.setValue(hasOverride).onChange((enabled) => {
-				if (colorInput) colorInput.disabled = !enabled;
-				appearance[spec.key] = enabled
-					? colorPicker?.getValue() ?? DEFAULT_ANNOTATE_BLOCK_COLOR
-					: null;
-				return onChange();
-			});
-		})
 		.addColorPicker((component) => {
 			colorPicker = component;
 			colorInput = setting.controlEl.querySelector(
@@ -378,6 +369,15 @@ function renderColorSetting(
 					appearance[spec.key] = value;
 					return onChange();
 				});
+		})
+		.addToggle((toggle) => {
+			toggle.setValue(hasOverride).onChange((enabled) => {
+				if (colorInput) colorInput.disabled = !enabled;
+				appearance[spec.key] = enabled
+					? colorPicker?.getValue() ?? DEFAULT_ANNOTATE_BLOCK_COLOR
+					: null;
+				return onChange();
+			});
 		});
 }
 
@@ -392,19 +392,6 @@ function renderAlignmentSetting(
 	let dropdown: DropdownComponent | null = null;
 
 	setting
-		.addToggle((component) => {
-			toggle = component;
-			component
-				.setValue(appearance[key] !== null)
-				.onChange((enabled) => {
-					if (!isAvailable()) return;
-					dropdown?.setDisabled(!enabled);
-					appearance[key] = enabled
-						? parseAlignment(dropdown?.getValue() ?? 'left')
-						: null;
-					return onChange();
-				});
-		})
 		.addDropdown((component) => {
 			dropdown = component;
 			component
@@ -416,6 +403,19 @@ function renderAlignmentSetting(
 				.onChange((value) => {
 					if (appearance[key] === null || !isAvailable()) return;
 					appearance[key] = parseAlignment(value);
+					return onChange();
+				});
+		})
+		.addToggle((component) => {
+			toggle = component;
+			component
+				.setValue(appearance[key] !== null)
+				.onChange((enabled) => {
+					if (!isAvailable()) return;
+					dropdown?.setDisabled(!enabled);
+					appearance[key] = enabled
+						? parseAlignment(dropdown?.getValue() ?? 'left')
+						: null;
 					return onChange();
 				});
 		});
