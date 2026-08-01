@@ -4,12 +4,17 @@ import {
 	PluginSettingTab,
 	Setting,
 	SettingDefinition,
+	SettingDefinitionGroup,
 	SettingDefinitionItem,
 	SettingDefinitionList,
 } from 'obsidian';
 import { createDefaultAnnotateBlockAppearance } from './annotate-block/defaults';
 import { AnnotateBlockAppearance } from './annotate-block/types';
 import { createFastGroupPreset, FastGroupPreset } from './fast-group';
+import {
+	DEFAULT_FINAL_PREVIEW_SETTINGS,
+	FinalPreviewSettings,
+} from './final-preview';
 import { createAnnotateBlockAppearanceSettingDefinitions } from './ui/annotate-block-appearance-settings';
 import { createTextGroupAppearanceSettingDefinitions } from './ui/text-group-appearance-settings';
 
@@ -18,6 +23,7 @@ export interface BetterAnnotateSettings {
 	useDefaultTextContent: boolean;
 	defaultTextContent: string;
 	defaultAnnotateAppearance: AnnotateBlockAppearance;
+	finalPreviewSettings: FinalPreviewSettings;
 	fastGroupPresets: FastGroupPreset[];
 }
 
@@ -26,6 +32,7 @@ export const DEFAULT_SETTINGS: BetterAnnotateSettings = {
 	useDefaultTextContent: true,
 	defaultTextContent: '',
 	defaultAnnotateAppearance: createDefaultAnnotateBlockAppearance(),
+	finalPreviewSettings: { ...DEFAULT_FINAL_PREVIEW_SETTINGS },
 	fastGroupPresets: [],
 };
 
@@ -70,6 +77,7 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 					},
 				},
 			),
+			this.createFinalPreviewSettingsDefinition(),
 			this.createFastGroupDefinition(),
 		];
 	}
@@ -108,6 +116,77 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 						});
 				});
 			},
+		};
+	}
+
+	private createFinalPreviewSettingsDefinition(): SettingDefinitionGroup {
+		const settings = this.plugin.settings.finalPreviewSettings;
+		return {
+			type: 'group',
+			heading: 'Final preview settings',
+			items: [
+				{
+					name: 'Added highlight color',
+					desc: 'Background color for newly added HTML.',
+					render: (setting: Setting) => {
+						setting.addColorPicker((picker) => {
+							picker
+								.setValue(settings.addedHighlightColor)
+								.onChange(async (value) => {
+									settings.addedHighlightColor = value;
+									await this.plugin.saveSettings();
+								});
+						});
+					},
+				},
+				{
+					name: 'Changed highlight color',
+					desc: 'Background color for modified HTML.',
+					render: (setting: Setting) => {
+						setting.addColorPicker((picker) => {
+							picker
+								.setValue(settings.changedHighlightColor)
+								.onChange(async (value) => {
+									settings.changedHighlightColor = value;
+									await this.plugin.saveSettings();
+								});
+						});
+					},
+				},
+				{
+					name: 'Deleted highlight color',
+					desc: 'Background color for removed HTML.',
+					render: (setting: Setting) => {
+						setting.addColorPicker((picker) => {
+							picker
+								.setValue(settings.deletedHighlightColor)
+								.onChange(async (value) => {
+									settings.deletedHighlightColor = value;
+									await this.plugin.saveSettings();
+								});
+						});
+					},
+				},
+				{
+					name: 'Highlight duration',
+					desc: 'Seconds to show HTML changes. Set to 0 to keep them visible.',
+					render: (setting: Setting) => {
+						setting.addSlider((slider) => {
+							slider
+								.setLimits(0, 30, 0.5)
+								.setValue(settings.highlightDuration)
+								.setDisplayFormat((value) =>
+									value === 0 ? 'Always' : `${value}s`,
+								)
+								.setInstant(true)
+								.onChange(async (value) => {
+									settings.highlightDuration = value;
+									await this.plugin.saveSettings();
+								});
+						});
+					},
+				},
+			],
 		};
 	}
 

@@ -212,6 +212,18 @@
 	word-break: break-word;
 }
 
+.ba-annotate-html-diff-added,
+.ba-annotate-html-diff-changed,
+.ba-annotate-html-diff-deleted {
+	box-decoration-break: clone;
+	border-radius: var(--radius-s);
+}
+
+.ba-annotate-html-diff-deleted {
+	text-decoration: line-through;
+	opacity: 0.8;
+}
+
 .ba-annotate-final-preview-group {
 	cursor: pointer;
 }

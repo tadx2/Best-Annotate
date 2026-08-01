@@ -10,6 +10,10 @@ import { cloneAnnotateBlockAppearance } from '../annotate-block/defaults';
 import { AnnotateBlockAppearance } from '../annotate-block/types';
 import { createFastGroupPreset, FastGroupPreset } from '../fast-group';
 import {
+	FinalPreviewSettings,
+	renderHtmlDiff,
+} from '../final-preview';
+import {
 	appendAnnotatedText,
 	createAnnotateElement,
 	createAnnotateContentElement,
@@ -99,6 +103,7 @@ export interface EditAnnotateModalOptions {
 	initialText?: string;
 	initialTextGroups?: TextGroup[];
 	initialAppearance: AnnotateBlockAppearance;
+	finalPreviewSettings: FinalPreviewSettings;
 	fastGroupPresets?: FastGroupPreset[];
 	onFastGroupPresetsChange?: () => void | Promise<void>;
 	onSave: (
@@ -130,6 +135,10 @@ export class EditAnnotateModal extends Modal {
 		FinalPreviewMode,
 		ButtonComponent
 	>();
+	private lastPreviewHtml = '';
+	private htmlDiffBefore = '';
+	private htmlHighlightExpiresAt = 0;
+	private htmlHighlightTimer: number | null = null;
 	private selectedTextGroupEl!: HTMLElement;
 	private groupPresetsPanelEl!: HTMLElement;
 	private fastGroupActionsEl!: HTMLElement;
@@ -207,6 +216,8 @@ export class EditAnnotateModal extends Modal {
 			event.preventDefault();
 			this.selectFinalPreviewGroup(event.target);
 		});
+		this.lastPreviewHtml = this.createFinalPreviewHtml();
+		this.htmlDiffBefore = this.lastPreviewHtml;
 		const tabs = stickyHeader.createDiv('ba-annotate-tabs');
 
 		const paragraphTabPanel = layout.createDiv(
@@ -375,6 +386,10 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	onClose() {
+		if (this.htmlHighlightTimer !== null) {
+			window.clearTimeout(this.htmlHighlightTimer);
+			this.htmlHighlightTimer = null;
+		}
 		this.contentEl.empty();
 	}
 
@@ -737,22 +752,27 @@ export class EditAnnotateModal extends Modal {
 
 	private renderFinalPreview() {
 		this.finalPreviewEl.empty();
+		const currentHtml = this.createFinalPreviewHtml();
+		this.updateHtmlHighlight(currentHtml);
 		this.finalPreviewEl.toggleClass(
 			'is-html-source',
 			this.finalPreviewMode === 'html',
 		);
 		if (this.finalPreviewMode === 'html') {
-			const source = createAnnotateElement(
-				this.finalPreviewEl.ownerDocument,
-				this.options.annotateId ?? 'preview',
-				this.text,
-				this.textGroups,
-				this.appearance,
-			).outerHTML;
 			const pre = this.finalPreviewEl.createEl('pre', {
 				cls: 'ba-annotate-final-preview-source',
 			});
-			pre.createEl('code').setText(source);
+			const code = pre.createEl('code');
+			if (this.shouldHighlightHtml(currentHtml)) {
+				renderHtmlDiff(
+					code,
+					this.htmlDiffBefore,
+					currentHtml,
+					this.options.finalPreviewSettings,
+				);
+			} else {
+				code.setText(currentHtml);
+			}
 			return;
 		}
 
@@ -778,6 +798,46 @@ export class EditAnnotateModal extends Modal {
 					element.tabIndex = 0;
 				},
 			},
+		);
+	}
+
+	private createFinalPreviewHtml() {
+		return createAnnotateElement(
+			this.finalPreviewEl.ownerDocument,
+			this.options.annotateId ?? 'preview',
+			this.text,
+			this.textGroups,
+			this.appearance,
+		).outerHTML;
+	}
+
+	private updateHtmlHighlight(currentHtml: string) {
+		if (currentHtml === this.lastPreviewHtml) return;
+		this.htmlDiffBefore = this.lastPreviewHtml;
+		this.lastPreviewHtml = currentHtml;
+		if (this.htmlHighlightTimer !== null) {
+			window.clearTimeout(this.htmlHighlightTimer);
+			this.htmlHighlightTimer = null;
+		}
+		const duration = this.options.finalPreviewSettings.highlightDuration;
+		if (duration === 0) {
+			this.htmlHighlightExpiresAt = Number.POSITIVE_INFINITY;
+			return;
+		}
+		this.htmlHighlightExpiresAt = Date.now() + duration * 1000;
+		this.htmlHighlightTimer = window.setTimeout(() => {
+			this.htmlHighlightTimer = null;
+			this.htmlHighlightExpiresAt = 0;
+			if (this.finalPreviewMode === 'html') {
+				this.renderFinalPreview();
+			}
+		}, duration * 1000);
+	}
+
+	private shouldHighlightHtml(currentHtml: string) {
+		return (
+			currentHtml !== this.htmlDiffBefore &&
+			Date.now() < this.htmlHighlightExpiresAt
 		);
 	}
 
