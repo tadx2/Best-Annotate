@@ -25,6 +25,72 @@ import { renderTextGroupAppearanceSettings } from './text-group-appearance-setti
 
 const FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE = 'data-ba-preview-group-index';
 
+interface AnnotateTabDefinition<T extends string> {
+	id: T;
+	label: string;
+	panelEl: HTMLElement;
+}
+
+function createTabNavigation<T extends string>(
+	container: HTMLElement,
+	definitions: readonly AnnotateTabDefinition<T>[],
+	initialTab: T,
+) {
+	container.setAttribute('role', 'tablist');
+	const items = definitions.map((definition) => {
+		const button = container.createEl('button', {
+			cls: 'ba-annotate-tab',
+		});
+		button.type = 'button';
+		button.setText(definition.label);
+		button.setAttribute('role', 'tab');
+		definition.panelEl.setAttribute('role', 'tabpanel');
+		return { ...definition, button };
+	});
+
+	const selectTab = (tabId: T) => {
+		for (const item of items) {
+			const selected = item.id === tabId;
+			item.panelEl.hidden = !selected;
+			item.button.toggleClass('is-active', selected);
+			item.button.setAttribute('aria-selected', String(selected));
+			item.button.tabIndex = selected ? 0 : -1;
+		}
+	};
+
+	for (const item of items) {
+		item.button.addEventListener('click', () => {
+			selectTab(item.id);
+		});
+	}
+	container.addEventListener('keydown', (event) => {
+		const currentIndex = items.findIndex(
+			(item) => item.button === event.target,
+		);
+		if (currentIndex === -1) return;
+
+		let nextIndex: number | null = null;
+		if (event.key === 'ArrowRight') {
+			nextIndex = (currentIndex + 1) % items.length;
+		} else if (event.key === 'ArrowLeft') {
+			nextIndex = (currentIndex - 1 + items.length) % items.length;
+		} else if (event.key === 'Home') {
+			nextIndex = 0;
+		} else if (event.key === 'End') {
+			nextIndex = items.length - 1;
+		}
+		if (nextIndex === null) return;
+
+		event.preventDefault();
+		const nextItem = items[nextIndex];
+		if (!nextItem) return;
+		selectTab(nextItem.id);
+		nextItem.button.focus();
+	});
+
+	selectTab(initialTab);
+}
+
 export interface EditAnnotateModalOptions {
 	initialText?: string;
 	initialTextGroups?: TextGroup[];
@@ -79,7 +145,10 @@ export class EditAnnotateModal extends Modal {
 		this.setTitle('Edit annotate');
 		this.modalEl.addClass('ba-annotate-modal');
 		const layout = this.contentEl.createDiv('ba-annotate-layout');
-		const finalPreviewSection = layout.createDiv(
+		const stickyHeader = layout.createDiv(
+			'ba-annotate-sticky-header',
+		);
+		const finalPreviewSection = stickyHeader.createDiv(
 			'ba-annotate-final-preview-section',
 		);
 		const finalPreviewHeader = finalPreviewSection.createDiv(
@@ -102,7 +171,33 @@ export class EditAnnotateModal extends Modal {
 			event.preventDefault();
 			this.selectFinalPreviewGroup(event.target);
 		});
-		const paragraphSettingSection = layout.createDiv(
+		const tabs = stickyHeader.createDiv('ba-annotate-tabs');
+
+		const paragraphTabPanel = layout.createDiv(
+			'ba-annotate-tab-panel',
+		);
+		const textGroupTabPanel = layout.createDiv(
+			'ba-annotate-tab-panel',
+		);
+		textGroupTabPanel.addClass('ba-annotate-text-group-tab-panel');
+		createTabNavigation(
+			tabs,
+			[
+				{
+					id: 'paragraph',
+					label: 'Paragraph',
+					panelEl: paragraphTabPanel,
+				},
+				{
+					id: 'text-group',
+					label: 'Text Group',
+					panelEl: textGroupTabPanel,
+				},
+			] as const,
+			'paragraph',
+		);
+
+		const paragraphSettingSection = paragraphTabPanel.createDiv(
 			'ba-annotate-paragraph-setting-section',
 		);
 		const paragraphSettingHeader = paragraphSettingSection.createDiv(
@@ -169,8 +264,12 @@ export class EditAnnotateModal extends Modal {
 			this.appearance,
 			{ onChange: () => this.renderFinalPreview() },
 		);
-		const segmentsColumn = layout.createDiv('ba-annotate-column');
-		const groupColumn = layout.createDiv('ba-annotate-column');
+		const segmentsColumn = textGroupTabPanel.createDiv(
+			'ba-annotate-column',
+		);
+		const groupColumn = textGroupTabPanel.createDiv(
+			'ba-annotate-column',
+		);
 
 		this.groupCreationEl = groupColumn.createDiv(
 			'ba-annotate-group-creation',

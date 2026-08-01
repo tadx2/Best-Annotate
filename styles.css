@@ -3,10 +3,20 @@
 	max-width: 90vw;
 }
 
+.ba-annotate-modal .modal-content {
+	display: flex;
+	flex-direction: column;
+	max-height: min(80vh, 52rem);
+	overflow: hidden;
+}
+
 .ba-annotate-layout {
 	display: grid;
+	flex: 1;
 	grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 	gap: var(--size-4-6);
+	min-height: 0;
+	overflow-y: auto;
 }
 
 .ba-annotate-column {
@@ -32,7 +42,7 @@
 	min-block-size: 0;
 }
 
-.ba-annotate-final-preview-section {
+.ba-annotate-sticky-header {
 	grid-column: 1 / -1;
 	position: sticky;
 	top: 0;
@@ -41,7 +51,44 @@
 }
 
 .ba-annotate-paragraph-setting-section {
+	min-width: 0;
+}
+
+.ba-annotate-tabs {
+	display: flex;
+	gap: var(--size-4-4);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ba-annotate-tab {
+	padding: var(--size-4-2) var(--size-4-3);
+	border: 0;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-muted);
+}
+
+.ba-annotate-tab:hover,
+.ba-annotate-tab.is-active {
+	border-bottom-color: var(--interactive-accent);
+	background: transparent;
+	color: var(--text-normal);
+}
+
+.ba-annotate-tab-panel {
 	grid-column: 1 / -1;
+	min-width: 0;
+}
+
+.ba-annotate-tab-panel[hidden] {
+	display: none;
+}
+
+.ba-annotate-text-group-tab-panel {
+	display: grid;
+	grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+	gap: var(--size-4-6);
 }
 
 .ba-annotate-final-preview {
@@ -275,8 +322,12 @@
 
 .ba-annotate-actions {
 	display: flex;
+	flex: 0 0 auto;
 	align-items: center;
 	margin-top: var(--size-4-4);
+	padding: var(--size-4-3) 0;
+	border-top: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
 }
 
 .ba-annotate-primary-actions {
@@ -287,6 +338,10 @@
 
 @media (max-width: 700px) {
 	.ba-annotate-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ba-annotate-text-group-tab-panel {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
