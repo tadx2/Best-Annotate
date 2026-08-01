@@ -2,6 +2,7 @@ import {
 	ButtonComponent,
 	ColorComponent,
 	Setting,
+	SettingDefinition,
 	SettingDefinitionGroup,
 	SliderComponent,
 	TextComponent,
@@ -14,7 +15,23 @@ import {
 
 export interface AnnotateBlockAppearanceSettingsOptions {
 	onChange: () => void | Promise<void>;
+	sectionContent?: Partial<
+		Record<
+			AnnotateBlockAppearanceSection,
+			(container: HTMLElement) => void
+		>
+	>;
+	sectionItems?: Partial<
+		Record<AnnotateBlockAppearanceSection, SettingDefinition[]>
+	>;
 }
+
+export type AnnotateBlockAppearanceSection =
+	| 'Paragraph'
+	| 'Text'
+	| 'Margin'
+	| 'Padding'
+	| 'Border';
 
 type AnnotateBlockNumberKey =
 	| 'fontSize'
@@ -37,6 +54,7 @@ type AnnotateBlockAlignmentKey =
 	| 'paragraphAlignment';
 
 interface AnnotateBlockAppearanceSettingSpec {
+	section: AnnotateBlockAppearanceSection;
 	name: string;
 	desc: string;
 	key: AnnotateBlockNumberKey;
@@ -48,6 +66,7 @@ interface AnnotateBlockAppearanceSettingSpec {
 }
 
 interface AnnotateBlockColorSettingSpec {
+	section: AnnotateBlockAppearanceSection;
 	name: string;
 	desc: string;
 	key: AnnotateBlockColorKey;
@@ -57,6 +76,7 @@ const DEFAULT_ANNOTATE_BLOCK_COLOR = '#000000';
 
 const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpec[] = [
 	{
+		section: 'Text',
 		name: 'Text size',
 		desc: 'Override the inherited text size.',
 		key: 'fontSize',
@@ -67,6 +87,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Paragraph',
 		name: 'Paragraph max width',
 		desc: 'Override the inherited paragraph maximum width.',
 		key: 'paragraphMaxWidth',
@@ -77,6 +98,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Paragraph',
 		name: 'Line height',
 		desc: 'Override the inherited line height.',
 		key: 'lineHeight',
@@ -87,6 +109,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: '×',
 	},
 	{
+		section: 'Margin',
 		name: 'Margin top',
 		desc: 'Override the spacing above the paragraph.',
 		key: 'paragraphMarginTop',
@@ -97,6 +120,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Margin',
 		name: 'Margin right',
 		desc: 'Override the spacing to the right of the paragraph.',
 		key: 'paragraphMarginRight',
@@ -107,6 +131,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Margin',
 		name: 'Margin bottom',
 		desc: 'Override the spacing below the paragraph.',
 		key: 'paragraphMarginBottom',
@@ -117,6 +142,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Margin',
 		name: 'Margin left',
 		desc: 'Override the spacing to the left of the paragraph.',
 		key: 'paragraphMarginLeft',
@@ -127,6 +153,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Padding',
 		name: 'Padding top',
 		desc: 'Override the spacing inside the top of the paragraph.',
 		key: 'paragraphPaddingTop',
@@ -137,6 +164,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Padding',
 		name: 'Padding right',
 		desc: 'Override the spacing inside the right of the paragraph.',
 		key: 'paragraphPaddingRight',
@@ -147,6 +175,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Padding',
 		name: 'Padding bottom',
 		desc: 'Override the spacing inside the bottom of the paragraph.',
 		key: 'paragraphPaddingBottom',
@@ -157,6 +186,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Padding',
 		name: 'Padding left',
 		desc: 'Override the spacing inside the left of the paragraph.',
 		key: 'paragraphPaddingLeft',
@@ -167,6 +197,7 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 		unit: 'px',
 	},
 	{
+		section: 'Border',
 		name: 'Border size',
 		desc: 'Add a solid border and override its width.',
 		key: 'borderSize',
@@ -180,15 +211,25 @@ const ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS: AnnotateBlockAppearanceSettingSpe
 
 const ANNOTATE_BLOCK_COLOR_SETTING_SPECS: AnnotateBlockColorSettingSpec[] = [
 	{
+		section: 'Text',
 		name: 'Text color',
 		desc: 'Override the inherited paragraph text color.',
 		key: 'textColor',
 	},
 	{
+		section: 'Border',
 		name: 'Border color',
 		desc: 'Override the paragraph border color.',
 		key: 'borderColor',
 	},
+];
+
+const ANNOTATE_BLOCK_APPEARANCE_SECTIONS: AnnotateBlockAppearanceSection[] = [
+	'Text',
+	'Paragraph',
+	'Border',
+	'Margin',
+	'Padding',
 ];
 
 export function renderAnnotateBlockAppearanceSettings(
@@ -197,58 +238,84 @@ export function renderAnnotateBlockAppearanceSettings(
 	options: AnnotateBlockAppearanceSettingsOptions,
 ) {
 	let refreshAlignmentState: () => void = () => undefined;
-	for (const spec of ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS) {
-		const setting = new Setting(container)
-			.setName(spec.name)
-			.setDesc(spec.desc);
-		renderNumberSetting(
-			setting,
-			appearance,
-			spec,
-			options.onChange,
-			() => refreshAlignmentState(),
+	for (const section of ANNOTATE_BLOCK_APPEARANCE_SECTIONS) {
+		const sectionEl = container.createDiv(
+			'ba-annotate-block-style-section',
 		);
-	}
-	for (const spec of ANNOTATE_BLOCK_COLOR_SETTING_SPECS) {
-		const setting = new Setting(container)
-			.setName(spec.name)
-			.setDesc(spec.desc);
-		renderColorSetting(setting, appearance, spec, options.onChange);
-	}
+		sectionEl.createDiv({
+			cls: 'ba-annotate-settings-heading',
+			text: section,
+		});
+		options.sectionContent?.[section]?.(sectionEl);
 
-	const textAlignmentSetting = new Setting(container)
-		.setName('Text alignment')
-		.setDesc('Override the alignment of text inside the paragraph.');
-	renderTextAlignmentSetting(
-		textAlignmentSetting,
-		appearance,
-		options.onChange,
-	);
+		for (const spec of ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS) {
+			if (spec.section !== section) continue;
+			const setting = new Setting(sectionEl)
+				.setName(spec.name)
+				.setDesc(spec.desc);
+			renderNumberSetting(
+				setting,
+				appearance,
+				spec,
+				options.onChange,
+				() => refreshAlignmentState(),
+			);
+		}
+		for (const spec of ANNOTATE_BLOCK_COLOR_SETTING_SPECS) {
+			if (spec.section !== section) continue;
+			const setting = new Setting(sectionEl)
+				.setName(spec.name)
+				.setDesc(spec.desc);
+			renderColorSetting(
+				setting,
+				appearance,
+				spec,
+				options.onChange,
+			);
+		}
 
-	const paragraphAlignmentSetting = new Setting(container)
-		.setName('Paragraph alignment')
-		.setDesc('Align the paragraph block when a maximum width is set.');
-	refreshAlignmentState = renderIconAlignmentSetting(
-		paragraphAlignmentSetting,
-		appearance,
-		'paragraphAlignment',
-		options.onChange,
-		() => appearance.paragraphMaxWidth !== null,
-	);
-	refreshAlignmentState();
+		if (section === 'Text') {
+			const textAlignmentSetting = new Setting(sectionEl)
+				.setName('Text alignment')
+				.setDesc(
+					'Override the alignment of text inside the paragraph.',
+				);
+			renderTextAlignmentSetting(
+				textAlignmentSetting,
+				appearance,
+				options.onChange,
+			);
+		}
+		if (section === 'Paragraph') {
+			const paragraphAlignmentSetting = new Setting(sectionEl)
+				.setName('Paragraph alignment')
+				.setDesc(
+					'Align the paragraph block when a maximum width is set.',
+				);
+			refreshAlignmentState = renderIconAlignmentSetting(
+				paragraphAlignmentSetting,
+				appearance,
+				'paragraphAlignment',
+				options.onChange,
+				() => appearance.paragraphMaxWidth !== null,
+			);
+			refreshAlignmentState();
+		}
+	}
 }
 
-export function createAnnotateBlockAppearanceSettingDefinition(
+export function createAnnotateBlockAppearanceSettingDefinitions(
 	appearance: AnnotateBlockAppearance,
 	options: AnnotateBlockAppearanceSettingsOptions,
-): SettingDefinitionGroup {
+): SettingDefinitionGroup[] {
 	let refreshAlignmentState: () => void = () => undefined;
 
-	return {
-		type: 'group',
-		heading: 'Paragraph settings for new annotates',
-		items: [
-			...ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS.map((spec) => ({
+	return ANNOTATE_BLOCK_APPEARANCE_SECTIONS.map((section) => {
+		const items: SettingDefinition[] = [
+			...(options.sectionItems?.[section] ?? []),
+			...ANNOTATE_BLOCK_APPEARANCE_SETTING_SPECS.filter(
+				(spec) => spec.section === section,
+			).map((spec) => ({
 				name: spec.name,
 				desc: spec.desc,
 				render: (setting: Setting) => {
@@ -261,7 +328,9 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 					);
 				},
 			})),
-			...ANNOTATE_BLOCK_COLOR_SETTING_SPECS.map((spec) => ({
+			...ANNOTATE_BLOCK_COLOR_SETTING_SPECS.filter(
+				(spec) => spec.section === section,
+			).map((spec) => ({
 				name: spec.name,
 				desc: spec.desc,
 				render: (setting: Setting) => {
@@ -273,7 +342,10 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 					);
 				},
 			})),
-			{
+		];
+
+		if (section === 'Text') {
+			items.push({
 				name: 'Text alignment',
 				desc: 'Override the alignment of text inside the paragraph.',
 				render: (setting: Setting) => {
@@ -283,8 +355,10 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 						options.onChange,
 					);
 				},
-			},
-			{
+			});
+		}
+		if (section === 'Paragraph') {
+			items.push({
 				name: 'Paragraph alignment',
 				desc: 'Align the paragraph block when a maximum width is set.',
 				render: (setting: Setting) => {
@@ -297,9 +371,15 @@ export function createAnnotateBlockAppearanceSettingDefinition(
 					);
 					refreshAlignmentState();
 				},
-			},
-		],
-	};
+			});
+		}
+
+		return {
+			type: 'group',
+			heading: section,
+			items,
+		};
+	});
 }
 
 function renderNumberSetting(

@@ -200,69 +200,20 @@ export class EditAnnotateModal extends Modal {
 		const paragraphSettingSection = paragraphTabPanel.createDiv(
 			'ba-annotate-paragraph-setting-section',
 		);
-		const paragraphSettingHeader = paragraphSettingSection.createDiv(
-			'ba-annotate-section-header',
-		);
-		const paragraphSettingTitle = paragraphSettingHeader.createDiv(
-			'ba-annotate-section-title',
-		);
-		paragraphSettingTitle.createDiv({
-			cls: 'ba-annotate-section-label',
-			text: 'Paragraph Setting',
-		});
 		const annotateStyleSettingsEl = paragraphSettingSection.createDiv(
 			'ba-annotate-block-style-settings',
 		);
-		let paragraphSettingExpanded = true;
-		const paragraphSettingToggle = new ButtonComponent(
-			paragraphSettingTitle,
-		)
-			.setIcon('chevron-up')
-			.setTooltip('Collapse paragraph settings')
-			.onClick(() => {
-				paragraphSettingExpanded = !paragraphSettingExpanded;
-				annotateStyleSettingsEl.hidden = !paragraphSettingExpanded;
-				paragraphSettingToggle
-					.setIcon(
-						paragraphSettingExpanded
-							? 'chevron-up'
-							: 'chevron-down',
-					)
-					.setTooltip(
-						paragraphSettingExpanded
-							? 'Collapse paragraph settings'
-							: 'Expand paragraph settings',
-					);
-				paragraphSettingToggle.buttonEl.setAttribute(
-					'aria-expanded',
-					String(paragraphSettingExpanded),
-				);
-			});
-		paragraphSettingToggle.buttonEl.setAttribute('aria-expanded', 'true');
-		const textContentSetting = new Setting(annotateStyleSettingsEl)
-			.setName('Text content')
-			.setDesc(
-				'Editing and saving the text content will reset all text groups.',
-			);
-		textContentSetting.nameEl.setText(['Text', 'Content'].join(' '));
-		this.paragraphTextButton = new ButtonComponent(
-			textContentSetting.controlEl,
-		)
-			.setButtonText('Edit')
-			.onClick(() => this.toggleParagraphTextEditing());
-		this.paragraphTextArea = new TextAreaComponent(
-			annotateStyleSettingsEl,
-		)
-			.setPlaceholder('Enter annotate text')
-			.setValue(this.text);
-		this.paragraphTextArea.inputEl.rows = 5;
-		this.paragraphTextArea.inputEl.readOnly = true;
-		this.paragraphTextArea.inputEl.hidden = true;
-		this.paragraphTextArea.inputEl.addClass('ba-annotate-textarea');
 		renderAnnotateBlockAppearanceSettings(
 			annotateStyleSettingsEl,
 			this.appearance,
-			{ onChange: () => this.renderFinalPreview() },
+			{
+				onChange: () => this.renderFinalPreview(),
+				sectionContent: {
+					Text: (container) => {
+						this.renderParagraphTextContentSetting(container);
+					},
+				},
+			},
 		);
 		const segmentsColumn = textGroupTabPanel.createDiv(
 			'ba-annotate-column',
@@ -388,6 +339,27 @@ export class EditAnnotateModal extends Modal {
 
 	onClose() {
 		this.contentEl.empty();
+	}
+
+	private renderParagraphTextContentSetting(container: HTMLElement) {
+		const textContentSetting = new Setting(container)
+			.setName('Text content')
+			.setDesc(
+				'Editing and saving the text content will reset all text groups.',
+			);
+		textContentSetting.nameEl.setText(['Text', 'Content'].join(' '));
+		this.paragraphTextButton = new ButtonComponent(
+			textContentSetting.controlEl,
+		)
+			.setButtonText('Edit')
+			.onClick(() => this.toggleParagraphTextEditing());
+		this.paragraphTextArea = new TextAreaComponent(container)
+			.setPlaceholder('Enter annotate text')
+			.setValue(this.text);
+		this.paragraphTextArea.inputEl.rows = 5;
+		this.paragraphTextArea.inputEl.readOnly = true;
+		this.paragraphTextArea.inputEl.hidden = true;
+		this.paragraphTextArea.inputEl.addClass('ba-annotate-textarea');
 	}
 
 	private toggleParagraphTextEditing() {

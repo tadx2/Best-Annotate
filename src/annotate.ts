@@ -30,7 +30,7 @@ export function registerAnnotateMenu(
 							initialText: settings.devMode &&
 								settings.addTestTextOnCreate
 								? settings.testText
-								: '',
+								: settings.defaultTextContent,
 							onSave: (text) => {
 								const id = insertAnnotate(
 									editor,

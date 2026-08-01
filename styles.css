@@ -119,6 +119,10 @@
 	display: none;
 }
 
+.ba-annotate-block-style-section + .ba-annotate-block-style-section {
+	margin-top: var(--size-4-6);
+}
+
 .ba-annotate-number-input {
 	width: 5.5rem;
 }
@@ -148,12 +152,6 @@
 
 .ba-annotate-section-header .ba-annotate-section-label {
 	margin: 0;
-}
-
-.ba-annotate-section-title {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
 }
 
 .ba-annotate-section-actions {
@@ -311,7 +309,7 @@
 }
 
 .ba-annotate-settings-heading {
-	padding: var(--size-4-2) var(--size-4-3);
+	padding: var(--size-4-2) 0;
 	font-weight: var(--font-semibold);
 	color: var(--text-muted);
 }

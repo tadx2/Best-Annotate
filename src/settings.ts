@@ -3,13 +3,14 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	SettingDefinition,
 	SettingDefinitionItem,
 	SettingDefinitionList,
 } from 'obsidian';
 import { createDefaultAnnotateBlockAppearance } from './annotate-block/defaults';
 import { AnnotateBlockAppearance } from './annotate-block/types';
 import { createFastGroupPreset, FastGroupPreset } from './fast-group';
-import { createAnnotateBlockAppearanceSettingDefinition } from './ui/annotate-block-appearance-settings';
+import { createAnnotateBlockAppearanceSettingDefinitions } from './ui/annotate-block-appearance-settings';
 import { createTextGroupAppearanceSettingDefinitions } from './ui/text-group-appearance-settings';
 
 const DEFAULT_TEST_TEXT =
@@ -19,6 +20,7 @@ export interface BetterAnnotateSettings {
 	devMode: boolean;
 	addTestTextOnCreate: boolean;
 	testText: string;
+	defaultTextContent: string;
 	defaultAnnotateAppearance: AnnotateBlockAppearance;
 	fastGroupPresets: FastGroupPreset[];
 }
@@ -27,6 +29,7 @@ export const DEFAULT_SETTINGS: BetterAnnotateSettings = {
 	devMode: true,
 	addTestTextOnCreate: true,
 	testText: DEFAULT_TEST_TEXT,
+	defaultTextContent: '',
 	defaultAnnotateAppearance: createDefaultAnnotateBlockAppearance(),
 	fastGroupPresets: [],
 };
@@ -64,9 +67,14 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 				},
 			},
 			this.createTestTextDefinition(),
-			createAnnotateBlockAppearanceSettingDefinition(
+			...createAnnotateBlockAppearanceSettingDefinitions(
 				this.plugin.settings.defaultAnnotateAppearance,
-				{ onChange: () => this.plugin.saveSettings() },
+				{
+					onChange: () => this.plugin.saveSettings(),
+					sectionItems: {
+						Text: [this.createDefaultTextContentDefinition()],
+					},
+				},
 			),
 			this.createFastGroupDefinition(),
 		];
@@ -112,6 +120,26 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 								this.update();
 							});
 					});
+			},
+		};
+	}
+
+	private createDefaultTextContentDefinition(): SettingDefinition {
+		return {
+			name: 'Text content',
+			desc: 'Default text for new annotates. Development test text has higher priority when enabled.',
+			render: (setting) => {
+				setting.nameEl.setText(['Text', 'Content'].join(' '));
+				setting.addTextArea((textArea) => {
+					textArea.inputEl.rows = 5;
+					textArea.inputEl.addClass('ba-annotate-textarea');
+					textArea
+						.setValue(this.plugin.settings.defaultTextContent)
+						.onChange(async (value) => {
+							this.plugin.settings.defaultTextContent = value;
+							await this.plugin.saveSettings();
+						});
+				});
 			},
 		};
 	}
