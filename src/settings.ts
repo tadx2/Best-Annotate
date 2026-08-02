@@ -7,6 +7,7 @@ import {
 	SettingDefinitionGroup,
 	SettingDefinitionItem,
 	SettingDefinitionList,
+	SettingPage,
 } from 'obsidian';
 import { createDefaultAnnotateBlockAppearance } from './annotate-block/defaults';
 import { AnnotateBlockAppearance } from './annotate-block/types';
@@ -16,7 +17,8 @@ import {
 	FinalPreviewSettings,
 } from './final-preview';
 import { createAnnotateBlockAppearanceSettingDefinitions } from './ui/annotate-block-appearance-settings';
-import { createTextGroupAppearanceSettingDefinitions } from './ui/text-group-appearance-settings';
+import { renderTextGroupAppearanceSettings } from './ui/text-group-appearance-settings';
+import { appendAnnotatedText } from './text-group/dom';
 
 export interface BetterAnnotateSettings {
 	devMode: boolean;
@@ -243,10 +245,17 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 			items: presets.map((preset) => ({
 				type: 'page',
 				name: preset.title || 'Untitled preset',
-				desc: preset.description || 'Configure this group preset.',
-				items: this.createFastGroupPresetDefinitions(preset),
+				desc: this.createFastGroupPresetDesc(preset),
+				page: () => new FastGroupPresetPage(preset, this.plugin),
 			})),
 		};
+	}
+
+	private createFastGroupPresetDesc(preset: FastGroupPreset) {
+		const fragment = createFragment();
+		const wrapper = fragment.createSpan({ cls: 'ba-fast-group-entry' });
+		createFastGroupButtonPreview(wrapper, preset);
+		return fragment;
 	}
 
 	private async addFastGroupPreset(presets: FastGroupPreset[]) {
@@ -277,70 +286,118 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 		this.update();
 	}
 
-	private createFastGroupPresetDefinitions(
-		preset: FastGroupPreset,
-	): SettingDefinitionItem[] {
-		return [
-			{
-				name: 'Title',
-				desc: 'Button text shown beside segments.',
-				render: (setting: Setting) => {
-					setting.addText((input) => {
-						input
-							.setValue(preset.title)
-							.onChange(async (value) => {
-								preset.title = value;
-								await this.plugin.saveSettings();
-							});
-					});
-				},
-			},
-			{
-				name: 'Description',
-				desc: 'Optional tooltip for the preset button.',
-				render: (setting: Setting) => {
-					setting.addText((input) => {
-						input
-							.setValue(preset.description)
-							.onChange(async (value) => {
-								preset.description = value;
-								await this.plugin.saveSettings();
-							});
-					});
-				},
-			},
-			{
-				name: 'Button color',
-				render: (setting: Setting) => {
-					setting.addColorPicker((colorPicker) => {
-						colorPicker
-							.setValue(preset.buttonColor)
-							.onChange(async (value) => {
-								preset.buttonColor = value;
-								await this.plugin.saveSettings();
-							});
-					});
-				},
-			},
-			{
-				name: 'Button text color',
-				render: (setting: Setting) => {
-					setting.addColorPicker((colorPicker) => {
-						colorPicker
-							.setValue(preset.buttonTextColor)
-							.onChange(async (value) => {
-								preset.buttonTextColor = value;
-								await this.plugin.saveSettings();
-							});
-					});
-				},
-			},
-			...createTextGroupAppearanceSettingDefinitions(
-				preset.appearance,
-				{
-					onChange: () => this.plugin.saveSettings(),
-				},
-			),
-		];
+}
+
+class FastGroupPresetPage extends SettingPage {
+	constructor(
+		private readonly preset: FastGroupPreset,
+		private readonly plugin: SettingsPlugin,
+	) {
+		super();
+		this.title = preset.title || 'Untitled preset';
 	}
+
+	display(): void {
+		this.containerEl.empty();
+		this.containerEl.addClass('ba-fast-group-preset-page');
+
+		const previewEl = this.containerEl.createDiv('ba-fast-group-preview');
+		const refreshPreview = () => {
+			previewEl.empty();
+			previewEl.createDiv({
+				cls: 'ba-annotate-settings-heading',
+				text: 'Preview',
+			});
+			const buttonRow = previewEl.createDiv(
+				'ba-fast-group-preview-button',
+			);
+			createFastGroupButtonPreview(buttonRow, this.preset);
+			const sampleEl = previewEl.createDiv(
+				'ba-fast-group-preview-sample',
+			);
+			appendAnnotatedText(sampleEl, PREVIEW_SAMPLE_TEXT, [
+				{
+					start: PREVIEW_SAMPLE_GROUP_START,
+					end: PREVIEW_SAMPLE_GROUP_END,
+					appearance: this.preset.appearance,
+				},
+			]);
+		};
+		const onChange = async () => {
+			refreshPreview();
+			await this.plugin.saveSettings();
+		};
+		refreshPreview();
+
+		const contentEl = this.containerEl.createDiv(
+			'ba-fast-group-preset-page-content',
+		);
+		contentEl.createDiv({
+			cls: 'ba-annotate-settings-heading',
+			text: 'Button',
+		});
+		new Setting(contentEl)
+			.setName('Title')
+			.setDesc('Button text shown beside segments.')
+			.addText((input) => {
+				input.setValue(this.preset.title).onChange(async (value) => {
+					this.preset.title = value;
+					await onChange();
+				});
+			});
+		new Setting(contentEl)
+			.setName('Description')
+			.setDesc('Optional tooltip for the preset button.')
+			.addText((input) => {
+				input
+					.setValue(this.preset.description)
+					.onChange(async (value) => {
+						this.preset.description = value;
+						await onChange();
+					});
+			});
+		new Setting(contentEl)
+			.setName('Button color')
+			.addColorPicker((colorPicker) => {
+				colorPicker
+					.setValue(this.preset.buttonColor)
+					.onChange(async (value) => {
+						this.preset.buttonColor = value;
+						await onChange();
+					});
+			});
+		new Setting(contentEl)
+			.setName('Button text color')
+			.addColorPicker((colorPicker) => {
+				colorPicker
+					.setValue(this.preset.buttonTextColor)
+					.onChange(async (value) => {
+						this.preset.buttonTextColor = value;
+						await onChange();
+					});
+			});
+		renderTextGroupAppearanceSettings(contentEl, this.preset.appearance, {
+			onChange,
+		});
+	}
+}
+
+const PREVIEW_SAMPLE_TEXT = 'The quick brown fox jumps over the lazy dog.';
+const PREVIEW_SAMPLE_GROUP_START = 4;
+const PREVIEW_SAMPLE_GROUP_END = 19;
+
+function createFastGroupButtonPreview(
+	container: HTMLElement,
+	preset: FastGroupPreset,
+) {
+	const button = container.createEl('button', {
+		cls: 'ba-annotate-fast-group-button ba-fast-group-chip',
+		text: preset.title.trim() || 'Preset',
+	});
+	button.type = 'button';
+	button.setCssProps({
+		'--ba-fast-group-button-color': preset.buttonColor,
+		'--ba-fast-group-button-text-color': preset.buttonTextColor,
+	});
+	return button;
 }
