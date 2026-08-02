@@ -1,8 +1,11 @@
+export type FinalPreviewMode = 'render' | 'html';
+
 export interface FinalPreviewSettings {
 	addedHighlightColor: string;
 	changedHighlightColor: string;
 	deletedHighlightColor: string;
 	highlightDuration: number;
+	defaultMode: FinalPreviewMode;
 }
 
 export const DEFAULT_FINAL_PREVIEW_SETTINGS: FinalPreviewSettings = {
@@ -10,6 +13,7 @@ export const DEFAULT_FINAL_PREVIEW_SETTINGS: FinalPreviewSettings = {
 	changedHighlightColor: '#ffe8a3',
 	deletedHighlightColor: '#ffc4c4',
 	highlightDuration: 3,
+	defaultMode: 'render',
 };
 
 type HtmlDiffToken = {

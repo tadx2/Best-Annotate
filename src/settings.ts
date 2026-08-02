@@ -155,6 +155,23 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 			heading: 'Final preview settings',
 			items: [
 				{
+					name: 'Default final preview mode',
+					desc: 'Preview mode used when opening the editor.',
+					render: (setting: Setting) => {
+						setting.addDropdown((dropdown) => {
+							dropdown
+								.addOption('render', 'Render')
+								.addOption('html', 'HTML')
+								.setValue(settings.defaultMode)
+								.onChange(async (value) => {
+									settings.defaultMode =
+										value === 'html' ? 'html' : 'render';
+									await this.plugin.saveSettings();
+								});
+						});
+					},
+				},
+				{
 					name: 'Added highlight color',
 					desc: 'Background color for newly added HTML.',
 					render: (setting: Setting) => {

@@ -1,5 +1,6 @@
 import { Plugin } from 'obsidian';
 import { registerAnnotateMenu } from './annotate';
+import { DEFAULT_FINAL_PREVIEW_SETTINGS } from './final-preview';
 import {
 	BetterAnnotateSettings,
 	BetterAnnotateSettingTab,
@@ -16,10 +17,14 @@ export default class BetterAnnotatePlugin extends Plugin {
 	}
 
 	private async loadSettings() {
-		this.settings = Object.assign(
+		const data = (await this.loadData()) as
+			| Partial<BetterAnnotateSettings>
+			| null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+		this.settings.finalPreviewSettings = Object.assign(
 			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<BetterAnnotateSettings>,
+			DEFAULT_FINAL_PREVIEW_SETTINGS,
+			data?.finalPreviewSettings,
 		);
 	}
 
