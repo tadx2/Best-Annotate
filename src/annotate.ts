@@ -98,7 +98,6 @@ function openEditAnnotateModal(
 		initialAppearance: appearance,
 		finalPreviewSettings: settings.finalPreviewSettings,
 		fastGroupPresets: settings.fastGroupPresets,
-		onFastGroupPresetsChange: () => plugin.saveData(settings),
 		onSave: (updatedText, updatedTextGroups, updatedAppearance) => {
 			updateAnnotate(
 				editor,
