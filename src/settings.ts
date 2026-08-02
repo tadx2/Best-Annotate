@@ -51,34 +51,10 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
-			{
-				name: 'Dev mode',
-				desc: 'Enable development-only features.',
-				control: {
-					type: 'toggle',
-					key: 'devMode',
-				},
-			},
-			{
-				name: 'Use default text content',
-				desc: 'Fill new annotates with Text Content in development mode.',
-				control: {
-					type: 'toggle',
-					key: 'useDefaultTextContent',
-					disabled: () => !this.plugin.settings.devMode,
-				},
-			},
-			...createAnnotateBlockAppearanceSettingDefinitions(
-				this.plugin.settings.defaultAnnotateAppearance,
-				{
-					onChange: () => this.plugin.saveSettings(),
-					sectionItems: {
-						Text: [this.createDefaultTextContentDefinition()],
-					},
-				},
-			),
+			this.createGroupPresetDefinition(),
 			this.createFinalPreviewSettingsDefinition(),
 			this.createFastGroupDefinition(),
+			this.createDeveloperDefinition(),
 		];
 	}
 
@@ -88,6 +64,57 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 		if (key === 'devMode' || key === 'useDefaultTextContent') {
 			this.update();
 		}
+	}
+
+	private createGroupPresetDefinition(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: 'Group preset',
+			items: [
+				{
+					type: 'page',
+					name: 'Default group preset',
+					desc: 'Default configuration applied to group buttons.',
+					items: createAnnotateBlockAppearanceSettingDefinitions(
+						this.plugin.settings.defaultAnnotateAppearance,
+						{
+							onChange: () => this.plugin.saveSettings(),
+							sectionItems: {
+								Text: [
+									this.createDefaultTextContentDefinition(),
+								],
+							},
+						},
+					),
+				},
+			],
+		};
+	}
+
+	private createDeveloperDefinition(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: 'Developer',
+			items: [
+				{
+					name: 'Dev mode',
+					desc: 'Enable development-only features.',
+					control: {
+						type: 'toggle',
+						key: 'devMode',
+					},
+				},
+				{
+					name: 'Use default text content',
+					desc: 'Fill new annotates with Text Content in development mode.',
+					control: {
+						type: 'toggle',
+						key: 'useDefaultTextContent',
+						disabled: () => !this.plugin.settings.devMode,
+					},
+				},
+			],
+		};
 	}
 
 	private createDefaultTextContentDefinition(): SettingDefinition {
@@ -195,8 +222,8 @@ export class BetterAnnotateSettingTab extends PluginSettingTab {
 
 		return {
 			type: 'list',
-			heading: 'Group presets',
-			emptyState: 'No group presets.',
+			heading: 'Fast group button presets',
+			emptyState: 'No fast group button presets.',
 			addItem: {
 				name: 'Add group preset',
 				action: () => {
