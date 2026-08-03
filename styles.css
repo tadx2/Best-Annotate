@@ -178,8 +178,18 @@
 	opacity: 0.8;
 }
 
+.ba-annotate-final-preview {
+	user-select: text;
+	-webkit-user-select: text;
+}
+
 .ba-annotate-final-preview-group {
 	cursor: pointer;
+}
+
+.ba-annotate-final-preview-group.is-active-text-group {
+	outline: 2px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
 }
 
 .ba-annotate-textarea {
@@ -313,58 +323,6 @@
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--input-radius);
 	line-height: 2;
-}
-
-.ba-annotate-segments {
-	display: flex;
-	flex: 1;
-	align-content: flex-start;
-	align-items: flex-start;
-	flex-wrap: wrap;
-	box-sizing: border-box;
-	gap: var(--size-2-2);
-	min-block-size: 0;
-	overflow-y: auto;
-	padding: var(--size-4-2);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--input-radius);
-	user-select: none;
-}
-
-.ba-annotate-segment {
-	display: inline-flex;
-	align-items: center;
-	box-sizing: border-box;
-	block-size: var(--input-height);
-	padding: var(--size-2-1) var(--size-4-2);
-	touch-action: none;
-}
-
-.ba-annotate-segment-group-row {
-	display: flex;
-	flex-basis: 100%;
-	flex-wrap: wrap;
-	gap: var(--size-2-2);
-}
-
-.ba-annotate-segment.is-selected {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-}
-
-.ba-annotate-segment.is-grouped {
-	background-color: var(--background-secondary);
-	border-color: var(--background-modifier-border);
-	color: var(--interactive-accent);
-	cursor: pointer;
-	opacity: 1;
-}
-
-.ba-annotate-segment.is-active-text-group {
-	background-color: var(--interactive-accent);
-	border-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	opacity: 1;
 }
 
 .ba-annotate-text-group-preview {

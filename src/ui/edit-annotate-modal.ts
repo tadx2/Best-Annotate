@@ -28,7 +28,6 @@ import {
 } from '../text-group/defaults';
 import { TextGroup, TextGroupAppearance } from '../text-group/types';
 import { renderAnnotateBlockAppearanceSettings } from './annotate-block-appearance-settings';
-import { SegmentSelector } from './segment-selector';
 import { renderTextGroupAppearanceSettings } from './text-group-appearance-settings';
 
 const FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE = 'data-ba-preview-group-index';
@@ -120,8 +119,10 @@ export class EditAnnotateModal extends Modal {
 	private textGroups: TextGroup[];
 	private appearance: AnnotateBlockAppearance;
 	private readonly fastGroupPresets: FastGroupPreset[];
-	private segmentsEl!: HTMLElement;
-	private segmentSelector!: SegmentSelector;
+	private selectedTextGroupIndex: number | null = null;
+	private selectedRange: { start: number; end: number } | null = null;
+	private readonly handleSelectionChange = () =>
+		this.handlePreviewSelectionChange();
 	// Text Group Preview is temporarily disabled.
 	private groupSettingsEl!: HTMLElement;
 	private finalPreviewEl!: HTMLElement;
@@ -211,6 +212,10 @@ export class EditAnnotateModal extends Modal {
 			event.preventDefault();
 			this.selectFinalPreviewGroup(event.target);
 		});
+		this.contentEl.ownerDocument.addEventListener(
+			'selectionchange',
+			this.handleSelectionChange,
+		);
 		this.lastPreviewHtml = this.createFinalPreviewHtml();
 		this.htmlDiffBefore = this.lastPreviewHtml;
 		const tabs = stickyHeader.createDiv('ba-annotate-tabs');
@@ -281,7 +286,6 @@ export class EditAnnotateModal extends Modal {
 			'ba-annotate-group-settings',
 		);
 
-		this.segmentsEl = segmentsColumn.createDiv('ba-annotate-segments');
 		const segmentActionRows = segmentsColumn.createDiv(
 			'ba-annotate-segment-action-rows',
 		);
@@ -339,15 +343,10 @@ export class EditAnnotateModal extends Modal {
 			.onClick(() => this.clearTextGroupStyles());
 		*/
 
-		this.segmentSelector = new SegmentSelector(this.segmentsEl, () => {
-			this.renderSelectedTextGroup();
-			this.updateSegmentActionButtons();
-		});
-		this.segmentSelector.setData(
-			this.text,
-			this.textGroups,
-			this.textGroups.length > 0 ? 0 : null,
-		);
+		this.selectedTextGroupIndex =
+			this.textGroups.length > 0 ? 0 : null;
+		this.renderSelectedTextGroup();
+		this.updateActionButtons();
 		this.renderFinalPreview();
 
 		const actions = this.contentEl.createDiv('ba-annotate-actions');
@@ -375,6 +374,10 @@ export class EditAnnotateModal extends Modal {
 			window.clearTimeout(this.htmlHighlightTimer);
 			this.htmlHighlightTimer = null;
 		}
+		this.contentEl.ownerDocument.removeEventListener(
+			'selectionchange',
+			this.handleSelectionChange,
+		);
 		this.contentEl.empty();
 	}
 
@@ -449,8 +452,11 @@ export class EditAnnotateModal extends Modal {
 		if (changed) {
 			this.text = text;
 			this.textGroups = [];
-			this.segmentSelector.setData(this.text, this.textGroups);
+			this.selectedTextGroupIndex = null;
+			this.selectedRange = null;
+			this.renderSelectedTextGroup();
 			this.renderFinalPreview();
+			this.updateActionButtons();
 		}
 
 		this.isParagraphTextEditing = false;
@@ -474,8 +480,7 @@ export class EditAnnotateModal extends Modal {
 	/* Text Group Preview is temporarily disabled.
 	private renderTextGroupPreview() {
 		this.textGroupPreviewEl.empty();
-		const selectedIndex =
-			this.segmentSelector.getSelectedTextGroupIndex();
+		const selectedIndex = this.selectedTextGroupIndex;
 		const group = selectedIndex === null
 			? undefined
 			: this.textGroups[selectedIndex];
@@ -540,6 +545,10 @@ export class EditAnnotateModal extends Modal {
 			{
 				onTextGroupElement: (element, _group, index) => {
 					element.addClass('ba-annotate-final-preview-group');
+					element.toggleClass(
+						'is-active-text-group',
+						index === this.selectedTextGroupIndex,
+					);
 					element.setAttribute(
 						FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE,
 						String(index),
@@ -597,6 +606,11 @@ export class EditAnnotateModal extends Modal {
 	private setFinalPreviewMode(mode: FinalPreviewMode) {
 		if (this.finalPreviewMode === mode) return;
 		this.finalPreviewMode = mode;
+		if (mode === 'html') {
+			this.clearPreviewDomSelection();
+			this.selectedRange = null;
+			this.updateActionButtons();
+		}
 		this.updateFinalPreviewModeButtons();
 		this.renderFinalPreview();
 	}
@@ -617,8 +631,33 @@ export class EditAnnotateModal extends Modal {
 			element.getAttribute(FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE),
 		);
 		if (Number.isInteger(index)) {
-			this.segmentSelector.selectTextGroup(index);
+			this.selectTextGroup(index);
 		}
+	}
+
+	private selectTextGroup(index: number) {
+		if (index < 0 || index >= this.textGroups.length) return;
+
+		this.selectedTextGroupIndex =
+			this.selectedTextGroupIndex === index ? null : index;
+		this.selectedRange = null;
+		this.clearPreviewDomSelection();
+		this.finalPreviewEl
+			.querySelectorAll(
+				'.ba-annotate-final-preview-group.is-active-text-group',
+			)
+			.forEach((element) =>
+				element.removeClass('is-active-text-group'),
+			);
+		if (this.selectedTextGroupIndex !== null) {
+			this.finalPreviewEl
+				.querySelector(
+					`[${FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE}="${this.selectedTextGroupIndex}"]`,
+				)
+				?.addClass('is-active-text-group');
+		}
+		this.renderSelectedTextGroup();
+		this.updateActionButtons();
 	}
 
 	private getFinalPreviewGroupElement(target: EventTarget | null) {
@@ -632,10 +671,116 @@ export class EditAnnotateModal extends Modal {
 			: null;
 	}
 
+	private handlePreviewSelectionChange() {
+		const range =
+			this.finalPreviewMode === 'render'
+				? this.getSelectionTextRange()
+				: null;
+		const changed =
+			range?.start !== this.selectedRange?.start ||
+			range?.end !== this.selectedRange?.end;
+		this.selectedRange = range;
+		if (range && this.selectedTextGroupIndex !== null) {
+			this.selectedTextGroupIndex = null;
+			this.finalPreviewEl
+				.querySelectorAll(
+					'.ba-annotate-final-preview-group.is-active-text-group',
+				)
+				.forEach((element) =>
+					element.removeClass('is-active-text-group'),
+				);
+			this.renderSelectedTextGroup();
+		}
+		if (changed) this.updateActionButtons();
+	}
+
+	private getSelectionTextRange() {
+		const selection = this.finalPreviewEl.ownerDocument.getSelection();
+		if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+			return null;
+		}
+
+		const range = selection.getRangeAt(0);
+		if (!this.finalPreviewEl.contains(range.commonAncestorContainer)) {
+			return null;
+		}
+
+		const start = this.getPreviewTextOffset(
+			range.startContainer,
+			range.startOffset,
+		);
+		const end = this.getPreviewTextOffset(
+			range.endContainer,
+			range.endOffset,
+		);
+		if (start === null || end === null) return null;
+		return { start: Math.min(start, end), end: Math.max(start, end) };
+	}
+
+	private getPreviewTextOffset(target: Node, targetOffset: number) {
+		let offset = 0;
+		let found = false;
+		const visit = (node: Node): void => {
+			if (found) return;
+			if (node === target) {
+				if (node.nodeType === Node.TEXT_NODE) {
+					offset += targetOffset;
+				} else {
+					for (let index = 0; index < targetOffset; index++) {
+						const child = node.childNodes[index];
+						if (child) offset += this.getNodeTextLength(child);
+					}
+				}
+				found = true;
+				return;
+			}
+			if (node.nodeType === Node.TEXT_NODE) {
+				offset += node.textContent?.length ?? 0;
+				return;
+			}
+			if (node.nodeType !== Node.ELEMENT_NODE) return;
+			const element = node as Element;
+			if (element.tagName === 'RT' || element.tagName === 'RP') return;
+			if (element.tagName === 'BR') {
+				offset += 1;
+				return;
+			}
+			node.childNodes.forEach(visit);
+		};
+		this.finalPreviewEl.childNodes.forEach(visit);
+		return found ? offset : null;
+	}
+
+	private getNodeTextLength(node: Node): number {
+		if (node.nodeType === Node.TEXT_NODE) {
+			return node.textContent?.length ?? 0;
+		}
+		if (node.nodeType !== Node.ELEMENT_NODE) return 0;
+		const element = node as Element;
+		if (element.tagName === 'RT' || element.tagName === 'RP') return 0;
+		if (element.tagName === 'BR') return 1;
+		let length = 0;
+		node.childNodes.forEach((child) => {
+			length += this.getNodeTextLength(child);
+		});
+		return length;
+	}
+
+	private clearPreviewDomSelection() {
+		const selection = this.finalPreviewEl.ownerDocument.getSelection();
+		if (!selection || selection.rangeCount === 0) return;
+		if (
+			this.finalPreviewEl.contains(
+				selection.getRangeAt(0).commonAncestorContainer,
+			)
+		) {
+			selection.removeAllRanges();
+		}
+	}
+
 	private renderGroupSettings() {
 		this.groupSettingsEl.empty();
-		const selectedIndex =
-			this.segmentSelector.getSelectedTextGroupIndex();
+		const selectedIndex = this.selectedTextGroupIndex;
 		const group = selectedIndex === null
 			? undefined
 			: this.textGroups[selectedIndex];
@@ -659,79 +804,56 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private createTextGroups(preset?: FastGroupPreset) {
-		const selected = this.segmentSelector
-			.getSelectedIndices()
-			.sort((a, b) => a - b);
-		if (selected.length === 0) return;
+		const range = this.selectedRange;
+		if (!range || range.start >= range.end) return;
 
-		let groupStart = selected[0]!;
-		let previous = selected[0]!;
-		const createdGroups: TextGroup[] = [];
-
-		for (const index of selected.slice(1)) {
-			if (index !== previous + 1) {
-				const group = this.addTextGroup(
-					groupStart,
-					previous,
-					preset,
-				);
-				if (group) createdGroups.push(group);
-				groupStart = index;
-			}
-			previous = index;
+		if (this.rangeOverlapsTextGroup(range.start, range.end)) {
+			new Notice('Selection overlaps an existing group. Ungroup it first.');
+			return;
 		}
-		const group = this.addTextGroup(groupStart, previous, preset);
-		if (group) createdGroups.push(group);
-
-		this.textGroups.sort((a, b) => a.start - b.start);
-		const selectedTextGroupIndex = createdGroups[0]
-			? this.textGroups.indexOf(createdGroups[0])
-			: null;
-		this.segmentSelector.setData(
-			this.text,
-			this.textGroups,
-			selectedTextGroupIndex,
-		);
-		this.renderFinalPreview();
-	}
-
-	private addTextGroup(
-		firstIndex: number,
-		lastIndex: number,
-		preset?: FastGroupPreset,
-	) {
-		const segments = this.segmentSelector.getSegments();
-		const first = segments[firstIndex];
-		const last = segments[lastIndex];
-		if (!first || !last) return null;
 
 		const group: TextGroup = {
-			start: first.start,
-			end: last.end,
+			start: range.start,
+			end: range.end,
 			appearance: preset
 				? cloneTextGroupAppearance(preset.appearance)
 				: createDefaultTextGroupAppearance(),
 		};
 		this.textGroups.push(group);
-		return group;
+		this.textGroups.sort((a, b) => a.start - b.start);
+		this.selectedTextGroupIndex = this.textGroups.indexOf(group);
+		this.selectedRange = null;
+		this.clearPreviewDomSelection();
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
+		this.updateActionButtons();
+	}
+
+	private rangeOverlapsTextGroup(start: number, end: number) {
+		return this.textGroups.some(
+			(group) => start < group.end && end > group.start,
+		);
 	}
 
 	private ungroupTextGroup() {
-		const selectedIndex =
-			this.segmentSelector.getSelectedTextGroupIndex();
+		const selectedIndex = this.selectedTextGroupIndex;
 		if (selectedIndex === null || !this.textGroups[selectedIndex]) return;
 
 		this.textGroups.splice(selectedIndex, 1);
-		this.segmentSelector.setData(this.text, this.textGroups);
+		this.selectedTextGroupIndex = null;
+		this.renderSelectedTextGroup();
 		this.renderFinalPreview();
+		this.updateActionButtons();
 	}
 
 	private ungroupAllTextGroups() {
 		if (this.textGroups.length === 0) return;
 
 		this.textGroups = [];
-		this.segmentSelector.setData(this.text, this.textGroups);
+		this.selectedTextGroupIndex = null;
+		this.renderSelectedTextGroup();
 		this.renderFinalPreview();
+		this.updateActionButtons();
 	}
 
 	private clearTextGroupStyles() {
@@ -750,7 +872,7 @@ export class EditAnnotateModal extends Modal {
 		copiedTextGroupAppearance = cloneTextGroupAppearance(
 			group.appearance,
 		);
-		this.updateSegmentActionButtons();
+		this.updateActionButtons();
 		new Notice('Group setting copied.');
 	}
 
@@ -783,26 +905,23 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private getSelectedTextGroup() {
-		const selectedIndex =
-			this.segmentSelector.getSelectedTextGroupIndex();
+		const selectedIndex = this.selectedTextGroupIndex;
 		return selectedIndex === null
 			? undefined
 			: this.textGroups[selectedIndex];
 	}
 
-	private updateSegmentActionButtons() {
-		const hasSelectedSegments =
-			this.segmentSelector.hasSelectedSegments();
-		this.groupTextButton.buttonEl.disabled = !hasSelectedSegments;
+	private updateActionButtons() {
+		const hasSelection = this.selectedRange !== null;
+		this.groupTextButton.buttonEl.disabled = !hasSelection;
 		for (const button of this.fastGroupButtons) {
-			button.buttonEl.disabled = !hasSelectedSegments;
+			button.buttonEl.disabled = !hasSelection;
 		}
-		const hasSelectedTextGroup =
-			this.segmentSelector.getSelectedTextGroupIndex() !== null;
+		const hasSelectedTextGroup = this.selectedTextGroupIndex !== null;
 		this.ungroupTextButton.buttonEl.disabled = !hasSelectedTextGroup;
 		this.ungroupAllTextButton.buttonEl.disabled =
 			this.textGroups.length === 0 ||
-			hasSelectedSegments ||
+			hasSelection ||
 			hasSelectedTextGroup;
 		this.copyTextGroupSettingButton.buttonEl.disabled =
 			!hasSelectedTextGroup;
@@ -816,8 +935,7 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private updateRightColumn() {
-		const showSelectedTextGroup =
-			this.segmentSelector.getSelectedTextGroupIndex() !== null;
+		const showSelectedTextGroup = this.selectedTextGroupIndex !== null;
 		this.selectedTextGroupEl.toggleClass(
 			'ba-annotate-is-hidden',
 			!showSelectedTextGroup,
