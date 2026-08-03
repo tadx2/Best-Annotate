@@ -64,12 +64,56 @@
 	font-size: var(--font-ui-smaller);
 }
 
-.ba-annotate-segment-action-rows {
+.ba-annotate-groups-list-item-ungroup {
+	flex-shrink: 0;
+	padding: 0 var(--size-2-2);
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	line-height: 1;
+}
+
+.ba-annotate-groups-list-item-ungroup:hover {
+	background: transparent;
+	color: var(--text-normal);
+}
+
+.ba-annotate-final-preview-wrap {
+	position: relative;
+}
+
+.ba-annotate-preview-actions {
+	position: absolute;
+	right: var(--size-4-2);
+	bottom: var(--size-4-2);
 	display: flex;
-	flex: 0 0 auto;
 	flex-direction: column;
+	align-items: flex-end;
 	gap: var(--size-2-2);
-	padding-top: var(--size-4-3);
+	max-width: calc(100% - var(--size-4-4));
+	padding: var(--size-2-3);
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ba-annotate-preview-actions[hidden] {
+	display: none;
+}
+
+.ba-buttons-set-range,
+.ba-buttons-set-group {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: var(--size-2-2);
+}
+
+.ba-buttons-set-range[hidden],
+.ba-buttons-set-group[hidden],
+.ba-annotate-segment-action-row[hidden] {
+	display: none;
 }
 
 .ba-annotate-segment-action-row {
@@ -143,7 +187,7 @@
 
 .ba-annotate-final-preview {
 	box-sizing: border-box;
-	block-size: 16rem;
+	block-size: 24rem;
 	overflow: auto;
 	padding: var(--size-4-3);
 	border: 1px solid var(--background-modifier-border);
@@ -301,12 +345,6 @@
 
 .ba-annotate-is-hidden {
 	display: none;
-}
-
-.ba-annotate-ungroup-button:not(:disabled),
-.ba-annotate-ungroup-button:not(:disabled):hover {
-	background-color: var(--color-yellow);
-	color: #000;
 }
 
 .ba-annotate-group-button:not(:disabled),

@@ -28,15 +28,11 @@ import {
 } from '../text-group/defaults';
 import { TextGroup, TextGroupAppearance } from '../text-group/types';
 import { renderAnnotateBlockAppearanceSettings } from './annotate-block-appearance-settings';
+import { ButtonsSet, PreviewSelectionState } from './buttons-set';
 import { renderTextGroupAppearanceSettings } from './text-group-appearance-settings';
 
 const FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE = 'data-ba-preview-group-index';
 let copiedTextGroupAppearance: TextGroupAppearance | null = null;
-
-type PreviewSelectionState =
-	| { type: 'none' }
-	| { type: 'range'; start: number; end: number }
-	| { type: 'group'; index: number };
 
 interface AnnotateTabDefinition<T extends string> {
 	id: T;
@@ -140,6 +136,7 @@ export class EditAnnotateModal extends Modal {
 	// Text Group Preview is temporarily disabled.
 	private groupSettingsEl!: HTMLElement;
 	private groupsListEl!: HTMLElement;
+	private buttonsSet!: ButtonsSet;
 	private finalPreviewEl!: HTMLElement;
 	private finalPreviewMode: FinalPreviewMode = 'render';
 	private readonly finalPreviewModeButtons = new Map<
@@ -151,15 +148,6 @@ export class EditAnnotateModal extends Modal {
 	private htmlHighlightExpiresAt = 0;
 	private htmlHighlightTimer: number | null = null;
 	private selectedTextGroupEl!: HTMLElement;
-	private fastGroupActionsEl!: HTMLElement;
-	private groupTextButton!: ButtonComponent;
-	private readonly fastGroupButtons: ButtonComponent[] = [];
-	private ungroupTextButton!: ButtonComponent;
-	private ungroupAllTextButton!: ButtonComponent;
-	private copyTextGroupSettingButton!: ButtonComponent;
-	private pasteTextGroupSettingButton!: ButtonComponent;
-	// Clear group setting (without annotate text) is temporarily disabled.
-	private clearTextGroupAllButton!: ButtonComponent;
 	private paragraphTextArea!: TextAreaComponent;
 	private paragraphTextButton!: ButtonComponent;
 	private isParagraphTextEditing = false;
@@ -214,7 +202,10 @@ export class EditAnnotateModal extends Modal {
 			this.finalPreviewModeButtons.set(mode.id, button);
 		}
 		this.updateFinalPreviewModeButtons();
-		this.finalPreviewEl = finalPreviewSection.createDiv(
+		const finalPreviewWrap = finalPreviewSection.createDiv(
+			'ba-annotate-final-preview-wrap',
+		);
+		this.finalPreviewEl = finalPreviewWrap.createDiv(
 			'ba-annotate-final-preview',
 		);
 		this.finalPreviewEl.addEventListener('click', (event) => {
@@ -306,62 +297,18 @@ export class EditAnnotateModal extends Modal {
 		);
 
 		this.groupsListEl = segmentsColumn.createDiv('ba-annotate-groups-list');
-		const segmentActionRows = segmentsColumn.createDiv(
-			'ba-annotate-segment-action-rows',
+		this.buttonsSet = new ButtonsSet(
+			finalPreviewWrap.createDiv('ba-annotate-preview-actions'),
+			{
+				onCreateGroup: () => this.createTextGroups(),
+				onCancel: () => this.cancelSelection(),
+				onFastGroupPreset: (preset) => this.createTextGroups(preset),
+				onCopyGroupSetting: () => this.copyTextGroupSetting(),
+				onPasteGroupSetting: () => this.pasteTextGroupSetting(),
+				onClearGroupSetting: () => this.clearTextGroupAll(),
+			},
 		);
-		const groupActions = segmentActionRows.createDiv(
-			'ba-annotate-segment-action-row',
-		);
-		this.groupTextButton = new ButtonComponent(groupActions)
-			.setButtonText('Create group')
-			.onClick(() => this.createTextGroups());
-		this.groupTextButton.buttonEl.addClass(
-			'ba-annotate-group-button',
-		);
-		this.ungroupTextButton = new ButtonComponent(groupActions)
-			.setButtonText('Ungroup')
-			.onClick(() => this.ungroupTextGroup());
-		this.ungroupTextButton.buttonEl.addClass(
-			'ba-annotate-ungroup-button',
-		);
-		this.ungroupAllTextButton = new ButtonComponent(groupActions)
-			.setButtonText('Ungroup all')
-			.setDestructive()
-			.onClick(() => this.ungroupAllTextGroups());
-
-		this.fastGroupActionsEl = segmentActionRows.createDiv(
-			'ba-annotate-segment-action-row',
-		);
-		this.renderFastGroupButtons();
-
-		const copyPasteGroupActions = segmentActionRows.createDiv(
-			'ba-annotate-segment-action-row',
-		);
-		this.copyTextGroupSettingButton = new ButtonComponent(
-			copyPasteGroupActions,
-		)
-			.setButtonText('Copy group setting')
-			.onClick(() => this.copyTextGroupSetting());
-		this.pasteTextGroupSettingButton = new ButtonComponent(
-			copyPasteGroupActions,
-		)
-			.setButtonText('Paste group setting')
-			.onClick(() => this.pasteTextGroupSetting());
-		this.clearTextGroupAllButton = new ButtonComponent(
-			copyPasteGroupActions,
-		)
-			.setButtonText('Clear group setting')
-			.onClick(() => this.clearTextGroupAll());
-
-		/* Clear group setting (without annotate text) is temporarily disabled.
-		this.clearTextGroupStyleButton = new ButtonComponent(
-			copyPasteGroupActions,
-		)
-			.setButtonText(
-				'Clear group setting (without annotate text)',
-			)
-			.onClick(() => this.clearTextGroupStyles());
-		*/
+		this.buttonsSet.setFastGroupPresets(this.fastGroupPresets);
 
 		this.selection =
 			this.textGroups.length > 0
@@ -401,26 +348,6 @@ export class EditAnnotateModal extends Modal {
 			this.handleSelectionChange,
 		);
 		this.contentEl.empty();
-	}
-
-	private renderFastGroupButtons() {
-		this.fastGroupActionsEl.empty();
-		this.fastGroupButtons.length = 0;
-		for (const preset of this.fastGroupPresets) {
-			const button = new ButtonComponent(this.fastGroupActionsEl)
-				.setButtonText(preset.title.trim() || 'Preset')
-				.onClick(() => this.createTextGroups(preset));
-			button.buttonEl.addClass('ba-annotate-fast-group-button');
-			button.buttonEl.setCssProps({
-				'--ba-fast-group-button-color': preset.buttonColor,
-				'--ba-fast-group-button-text-color':
-					preset.buttonTextColor,
-			});
-			if (preset.description.trim()) {
-				button.setTooltip(preset.description.trim());
-			}
-			this.fastGroupButtons.push(button);
-		}
 	}
 
 	private renderParagraphTextContentSetting(container: HTMLElement) {
@@ -527,6 +454,17 @@ export class EditAnnotateModal extends Modal {
 					text: group.appearance.annotate,
 				});
 			}
+			const ungroupButton = item.createEl('button', {
+				cls: 'ba-annotate-groups-list-item-ungroup',
+				text: '×',
+			});
+			ungroupButton.type = 'button';
+			ungroupButton.setAttribute('aria-label', 'Ungroup');
+			ungroupButton.setAttribute('title', 'Ungroup');
+			ungroupButton.addEventListener('click', (event) => {
+				event.stopPropagation();
+				this.ungroupTextGroup(index);
+			});
 			const select = () => this.selectTextGroup(index);
 			item.addEventListener('click', select);
 			item.addEventListener('keydown', (event) => {
@@ -732,6 +670,16 @@ export class EditAnnotateModal extends Modal {
 		this.updateActionButtons();
 	}
 
+	private cancelSelection() {
+		if (this.selection.type === 'none') return;
+
+		this.selection = { type: 'none' };
+		this.clearPreviewDomSelection();
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
+		this.updateActionButtons();
+	}
+
 	private getFinalPreviewGroupElement(target: EventTarget | null) {
 		if (!(target instanceof Element)) return null;
 
@@ -919,22 +867,20 @@ export class EditAnnotateModal extends Modal {
 		);
 	}
 
-	private ungroupTextGroup() {
-		const selectedIndex = this.selectedTextGroupIndex;
-		if (selectedIndex === null || !this.textGroups[selectedIndex]) return;
+	private ungroupTextGroup(index: number) {
+		if (!this.textGroups[index]) return;
 
-		this.textGroups.splice(selectedIndex, 1);
-		this.selection = { type: 'none' };
-		this.renderSelectedTextGroup();
-		this.renderFinalPreview();
-		this.updateActionButtons();
-	}
-
-	private ungroupAllTextGroups() {
-		if (this.textGroups.length === 0) return;
-
-		this.textGroups = [];
-		this.selection = { type: 'none' };
+		this.textGroups.splice(index, 1);
+		if (this.selection.type === 'group') {
+			if (this.selection.index === index) {
+				this.selection = { type: 'none' };
+			} else if (this.selection.index > index) {
+				this.selection = {
+					type: 'group',
+					index: this.selection.index - 1,
+				};
+			}
+		}
 		this.renderSelectedTextGroup();
 		this.renderFinalPreview();
 		this.updateActionButtons();
@@ -996,25 +942,10 @@ export class EditAnnotateModal extends Modal {
 	}
 
 	private updateActionButtons() {
-		const hasSelection = this.selectedRange !== null;
-		this.groupTextButton.buttonEl.disabled = !hasSelection;
-		for (const button of this.fastGroupButtons) {
-			button.buttonEl.disabled = !hasSelection;
-		}
-		const hasSelectedTextGroup = this.selectedTextGroupIndex !== null;
-		this.ungroupTextButton.buttonEl.disabled = !hasSelectedTextGroup;
-		this.ungroupAllTextButton.buttonEl.disabled =
-			this.textGroups.length === 0 ||
-			hasSelection ||
-			hasSelectedTextGroup;
-		this.copyTextGroupSettingButton.buttonEl.disabled =
-			!hasSelectedTextGroup;
-		this.pasteTextGroupSettingButton.buttonEl.disabled =
-			!hasSelectedTextGroup || copiedTextGroupAppearance === null;
-		// this.clearTextGroupStyleButton.buttonEl.disabled =
-		// 	!hasSelectedTextGroup;
-		this.clearTextGroupAllButton.buttonEl.disabled =
-			!hasSelectedTextGroup;
+		this.buttonsSet.update(
+			this.selection,
+			copiedTextGroupAppearance !== null,
+		);
 		this.updateRightColumn();
 	}
 
