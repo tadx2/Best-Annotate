@@ -27,6 +27,43 @@
 	block-size: 32rem;
 }
 
+.ba-annotate-groups-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	max-height: 30vh;
+	overflow-y: auto;
+}
+
+.ba-annotate-groups-list-item {
+	display: flex;
+	align-items: baseline;
+	gap: var(--size-2-3);
+	padding: var(--size-2-2) var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--input-radius);
+	cursor: pointer;
+}
+
+.ba-annotate-groups-list-item.is-active-text-group {
+	border-color: var(--interactive-accent);
+	background-color: var(--background-secondary);
+}
+
+.ba-annotate-groups-list-item-text {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ba-annotate-groups-list-item-annotate {
+	flex-shrink: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
 .ba-annotate-segment-action-rows {
 	display: flex;
 	flex: 0 0 auto;
@@ -187,9 +224,23 @@
 	cursor: pointer;
 }
 
-.ba-annotate-final-preview-group.is-active-text-group {
-	outline: 2px solid var(--interactive-accent);
-	border-radius: var(--radius-s);
+.ba-annotate-final-preview.has-active-group .ba-annotate-final-preview-block {
+	color: var(--text-faint);
+	transition: color 100ms ease;
+}
+
+.ba-annotate-final-preview.has-active-group
+	.ba-annotate-final-preview-group:not(.ba-annotate-dim) {
+	color: var(--text-normal);
+}
+
+.ba-annotate-final-preview-group,
+.ba-annotate-dim {
+	transition: opacity 100ms ease;
+}
+
+.ba-annotate-dim {
+	opacity: 0.35;
 }
 
 .ba-annotate-textarea {

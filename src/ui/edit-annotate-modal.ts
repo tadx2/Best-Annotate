@@ -33,6 +33,11 @@ import { renderTextGroupAppearanceSettings } from './text-group-appearance-setti
 const FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE = 'data-ba-preview-group-index';
 let copiedTextGroupAppearance: TextGroupAppearance | null = null;
 
+type PreviewSelectionState =
+	| { type: 'none' }
+	| { type: 'range'; start: number; end: number }
+	| { type: 'group'; index: number };
+
 interface AnnotateTabDefinition<T extends string> {
 	id: T;
 	label: string;
@@ -119,12 +124,22 @@ export class EditAnnotateModal extends Modal {
 	private textGroups: TextGroup[];
 	private appearance: AnnotateBlockAppearance;
 	private readonly fastGroupPresets: FastGroupPreset[];
-	private selectedTextGroupIndex: number | null = null;
-	private selectedRange: { start: number; end: number } | null = null;
+	private selection: PreviewSelectionState = { type: 'none' };
 	private readonly handleSelectionChange = () =>
 		this.handlePreviewSelectionChange();
+
+	private get selectedTextGroupIndex() {
+		return this.selection.type === 'group' ? this.selection.index : null;
+	}
+
+	private get selectedRange() {
+		return this.selection.type === 'range'
+			? { start: this.selection.start, end: this.selection.end }
+			: null;
+	}
 	// Text Group Preview is temporarily disabled.
 	private groupSettingsEl!: HTMLElement;
+	private groupsListEl!: HTMLElement;
 	private finalPreviewEl!: HTMLElement;
 	private finalPreviewMode: FinalPreviewMode = 'render';
 	private readonly finalPreviewModeButtons = new Map<
@@ -203,7 +218,11 @@ export class EditAnnotateModal extends Modal {
 			'ba-annotate-final-preview',
 		);
 		this.finalPreviewEl.addEventListener('click', (event) => {
-			this.selectFinalPreviewGroup(event.target);
+			if (this.getFinalPreviewGroupElement(event.target)) {
+				this.selectFinalPreviewGroup(event.target);
+				return;
+			}
+			this.clearSelectedTextGroup();
 		});
 		this.finalPreviewEl.addEventListener('keydown', (event) => {
 			if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -286,6 +305,7 @@ export class EditAnnotateModal extends Modal {
 			'ba-annotate-group-settings',
 		);
 
+		this.groupsListEl = segmentsColumn.createDiv('ba-annotate-groups-list');
 		const segmentActionRows = segmentsColumn.createDiv(
 			'ba-annotate-segment-action-rows',
 		);
@@ -343,8 +363,10 @@ export class EditAnnotateModal extends Modal {
 			.onClick(() => this.clearTextGroupStyles());
 		*/
 
-		this.selectedTextGroupIndex =
-			this.textGroups.length > 0 ? 0 : null;
+		this.selection =
+			this.textGroups.length > 0
+				? { type: 'group', index: 0 }
+				: { type: 'none' };
 		this.renderSelectedTextGroup();
 		this.updateActionButtons();
 		this.renderFinalPreview();
@@ -452,8 +474,7 @@ export class EditAnnotateModal extends Modal {
 		if (changed) {
 			this.text = text;
 			this.textGroups = [];
-			this.selectedTextGroupIndex = null;
-			this.selectedRange = null;
+			this.selection = { type: 'none' };
 			this.renderSelectedTextGroup();
 			this.renderFinalPreview();
 			this.updateActionButtons();
@@ -469,11 +490,56 @@ export class EditAnnotateModal extends Modal {
 
 	private renderSelectedTextGroup() {
 		// this.renderTextGroupPreview();
+		this.renderGroupsList();
 		this.renderGroupSettings();
+	}
+
+	private renderGroupsList() {
+		this.groupsListEl.empty();
+		if (this.textGroups.length === 0) {
+			this.groupsListEl.createDiv({
+				cls: 'setting-item-description',
+				text: 'No groups yet. Select text in the preview to create one.',
+			});
+			return;
+		}
+
+		this.textGroups.forEach((group, index) => {
+			const item = this.groupsListEl.createDiv(
+				'ba-annotate-groups-list-item',
+			);
+			item.toggleClass(
+				'is-active-text-group',
+				index === this.selectedTextGroupIndex,
+			);
+			item.setAttribute('role', 'button');
+			item.tabIndex = 0;
+			const text = this.text
+				.slice(group.start, group.end)
+				.replace(/\r?\n/g, ' ');
+			item.createSpan({
+				cls: 'ba-annotate-groups-list-item-text',
+				text,
+			});
+			if (group.appearance.annotate) {
+				item.createSpan({
+					cls: 'ba-annotate-groups-list-item-annotate',
+					text: group.appearance.annotate,
+				});
+			}
+			const select = () => this.selectTextGroup(index);
+			item.addEventListener('click', select);
+			item.addEventListener('keydown', (event) => {
+				if (event.key !== 'Enter' && event.key !== ' ') return;
+				event.preventDefault();
+				select();
+			});
+		});
 	}
 
 	private refreshPreviews() {
 		// this.renderTextGroupPreview();
+		this.renderGroupsList();
 		this.renderFinalPreview();
 	}
 
@@ -538,6 +604,10 @@ export class EditAnnotateModal extends Modal {
 			previewBlock,
 			this.appearance,
 		);
+		this.finalPreviewEl.toggleClass(
+			'has-active-group',
+			this.selectedTextGroupIndex !== null,
+		);
 		appendAnnotatedText(
 			previewContent,
 			this.text,
@@ -546,8 +616,9 @@ export class EditAnnotateModal extends Modal {
 				onTextGroupElement: (element, _group, index) => {
 					element.addClass('ba-annotate-final-preview-group');
 					element.toggleClass(
-						'is-active-text-group',
-						index === this.selectedTextGroupIndex,
+						'ba-annotate-dim',
+						this.selectedTextGroupIndex !== null &&
+							index !== this.selectedTextGroupIndex,
 					);
 					element.setAttribute(
 						FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE,
@@ -608,7 +679,9 @@ export class EditAnnotateModal extends Modal {
 		this.finalPreviewMode = mode;
 		if (mode === 'html') {
 			this.clearPreviewDomSelection();
-			this.selectedRange = null;
+			if (this.selection.type === 'range') {
+				this.selection = { type: 'none' };
+			}
 			this.updateActionButtons();
 		}
 		this.updateFinalPreviewModeButtons();
@@ -638,25 +711,24 @@ export class EditAnnotateModal extends Modal {
 	private selectTextGroup(index: number) {
 		if (index < 0 || index >= this.textGroups.length) return;
 
-		this.selectedTextGroupIndex =
-			this.selectedTextGroupIndex === index ? null : index;
-		this.selectedRange = null;
+		this.selection =
+			this.selection.type === 'group' && this.selection.index === index
+				? { type: 'none' }
+				: { type: 'group', index };
 		this.clearPreviewDomSelection();
-		this.finalPreviewEl
-			.querySelectorAll(
-				'.ba-annotate-final-preview-group.is-active-text-group',
-			)
-			.forEach((element) =>
-				element.removeClass('is-active-text-group'),
-			);
-		if (this.selectedTextGroupIndex !== null) {
-			this.finalPreviewEl
-				.querySelector(
-					`[${FINAL_PREVIEW_GROUP_INDEX_ATTRIBUTE}="${this.selectedTextGroupIndex}"]`,
-				)
-				?.addClass('is-active-text-group');
-		}
 		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
+		this.updateActionButtons();
+	}
+
+	private clearSelectedTextGroup() {
+		if (this.selection.type !== 'group') return;
+		// A click ending a drag selection should not clear the group.
+		if (this.getSelectionTextRange() !== null) return;
+
+		this.selection = { type: 'none' };
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
 		this.updateActionButtons();
 	}
 
@@ -676,22 +748,32 @@ export class EditAnnotateModal extends Modal {
 			this.finalPreviewMode === 'render'
 				? this.getSelectionTextRange()
 				: null;
-		const changed =
-			range?.start !== this.selectedRange?.start ||
-			range?.end !== this.selectedRange?.end;
-		this.selectedRange = range;
-		if (range && this.selectedTextGroupIndex !== null) {
-			this.selectedTextGroupIndex = null;
-			this.finalPreviewEl
-				.querySelectorAll(
-					'.ba-annotate-final-preview-group.is-active-text-group',
-				)
-				.forEach((element) =>
-					element.removeClass('is-active-text-group'),
-				);
-			this.renderSelectedTextGroup();
+		const previous = this.selection;
+		if (range) {
+			this.selection = { type: 'range', ...range };
+			if (previous.type === 'group') {
+				this.clearActiveGroupDimming();
+				this.renderSelectedTextGroup();
+			}
+		} else if (previous.type === 'range') {
+			this.selection = { type: 'none' };
 		}
+		const changed =
+			previous.type !== this.selection.type ||
+			(previous.type === 'range' &&
+				this.selection.type === 'range' &&
+				(previous.start !== this.selection.start ||
+					previous.end !== this.selection.end));
 		if (changed) this.updateActionButtons();
+	}
+
+	// Remove the spotlight by toggling classes only. No nodes are moved, so
+	// an in-progress DOM selection is never disturbed.
+	private clearActiveGroupDimming() {
+		this.finalPreviewEl.removeClass('has-active-group');
+		this.finalPreviewEl
+			.querySelectorAll('.ba-annotate-final-preview-group.ba-annotate-dim')
+			.forEach((element) => element.removeClass('ba-annotate-dim'));
 	}
 
 	private getSelectionTextRange() {
@@ -821,8 +903,10 @@ export class EditAnnotateModal extends Modal {
 		};
 		this.textGroups.push(group);
 		this.textGroups.sort((a, b) => a.start - b.start);
-		this.selectedTextGroupIndex = this.textGroups.indexOf(group);
-		this.selectedRange = null;
+		this.selection = {
+			type: 'group',
+			index: this.textGroups.indexOf(group),
+		};
 		this.clearPreviewDomSelection();
 		this.renderSelectedTextGroup();
 		this.renderFinalPreview();
@@ -840,7 +924,7 @@ export class EditAnnotateModal extends Modal {
 		if (selectedIndex === null || !this.textGroups[selectedIndex]) return;
 
 		this.textGroups.splice(selectedIndex, 1);
-		this.selectedTextGroupIndex = null;
+		this.selection = { type: 'none' };
 		this.renderSelectedTextGroup();
 		this.renderFinalPreview();
 		this.updateActionButtons();
@@ -850,7 +934,7 @@ export class EditAnnotateModal extends Modal {
 		if (this.textGroups.length === 0) return;
 
 		this.textGroups = [];
-		this.selectedTextGroupIndex = null;
+		this.selection = { type: 'none' };
 		this.renderSelectedTextGroup();
 		this.renderFinalPreview();
 		this.updateActionButtons();
