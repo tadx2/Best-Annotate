@@ -360,6 +360,11 @@
 	display: none;
 }
 
+.ba-buttons-set-range .ba-annotate-group-button {
+	min-inline-size: 12rem;
+	justify-content: center;
+}
+
 .ba-annotate-group-button:not(:disabled),
 .ba-annotate-group-button:not(:disabled):hover {
 	background-color: var(--interactive-accent);

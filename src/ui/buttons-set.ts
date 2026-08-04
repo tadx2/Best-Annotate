@@ -47,26 +47,26 @@ export class ButtonsSet {
 		);
 		const createGroupButton = new ButtonComponent(rangeRow)
 			.setIcon('plus')
-			.setButtonText('Create')
 			.onClick(() => this.callbacks.onCreateGroup());
 		createGroupButton.buttonEl.addClass('ba-annotate-group-button');
+		createGroupButton.buttonEl.createSpan({ text: 'Create' });
 
 		this.groupSection = containerEl.createDiv('ba-buttons-set-group');
 		const groupRow = this.groupSection.createDiv(
 			'ba-annotate-segment-action-row',
 		);
-		new ButtonComponent(groupRow)
+		const copyButton = new ButtonComponent(groupRow)
 			.setIcon('copy')
-			.setButtonText('Copy')
 			.onClick(() => this.callbacks.onCopyGroupSetting());
+		copyButton.buttonEl.createSpan({ text: 'Copy' });
 		this.pasteButton = new ButtonComponent(groupRow)
 			.setIcon('clipboard')
-			.setButtonText('Paste')
 			.onClick(() => this.callbacks.onPasteGroupSetting());
-		new ButtonComponent(groupRow)
+		this.pasteButton.buttonEl.createSpan({ text: 'Paste' });
+		const clearButton = new ButtonComponent(groupRow)
 			.setIcon('eraser')
-			.setButtonText('Clear')
 			.onClick(() => this.callbacks.onClearGroupSetting());
+		clearButton.buttonEl.createSpan({ text: 'Clear' });
 	}
 
 	setFastGroupPresets(presets: FastGroupPreset[]) {
