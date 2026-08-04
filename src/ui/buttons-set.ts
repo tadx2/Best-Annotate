@@ -73,9 +73,16 @@ export class ButtonsSet {
 		this.fastGroupRow.empty();
 		this.fastGroupRow.hidden = presets.length === 0;
 		for (const preset of presets) {
-			const button = new ButtonComponent(this.fastGroupRow)
-				.setButtonText(preset.title.trim() || 'Preset')
-				.onClick(() => this.callbacks.onFastGroupPreset(preset));
+			const label = preset.title.trim() || 'Preset';
+			const button = new ButtonComponent(this.fastGroupRow).onClick(() =>
+				this.callbacks.onFastGroupPreset(preset),
+			);
+			if (preset.icon.trim()) {
+				button.setIcon(preset.icon.trim());
+				button.buttonEl.createSpan({ text: label });
+			} else {
+				button.setButtonText(label);
+			}
 			button.buttonEl.addClass('ba-annotate-fast-group-button');
 			button.buttonEl.setCssProps({
 				'--ba-fast-group-button-color': preset.buttonColor,

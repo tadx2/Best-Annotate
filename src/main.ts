@@ -26,6 +26,9 @@ export default class BetterAnnotatePlugin extends Plugin {
 			DEFAULT_FINAL_PREVIEW_SETTINGS,
 			data?.finalPreviewSettings,
 		);
+		this.settings.fastGroupPresets = (this.settings.fastGroupPresets ?? []).map(
+			(preset) => ({ ...preset, icon: preset.icon ?? '' }),
+		);
 	}
 
 	async saveSettings() {

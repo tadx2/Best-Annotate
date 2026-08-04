@@ -556,3 +556,7 @@
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
+
+.ba-edit-presets-textarea {
+	width: 100%;
+}
