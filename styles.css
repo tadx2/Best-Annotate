@@ -560,3 +560,37 @@
 .ba-edit-presets-textarea {
 	width: 100%;
 }
+
+.ba-icon-picker-search {
+	width: 100%;
+	margin-bottom: var(--size-4-2);
+}
+
+.ba-icon-picker-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr));
+	gap: var(--size-2-2);
+	max-height: 50vh;
+	overflow-y: auto;
+}
+
+.ba-icon-picker-option {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	aspect-ratio: 1;
+	padding: 0;
+}
+
+.ba-icon-picker-option.is-active {
+	border-color: var(--interactive-accent);
+	color: var(--interactive-accent);
+}
+
+.ba-icon-picker-group {
+	grid-column: 1 / -1;
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	margin-top: var(--size-2-2);
+}

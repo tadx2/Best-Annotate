@@ -23,6 +23,7 @@ import {
 	DEFAULT_FINAL_PREVIEW_SETTINGS,
 	FinalPreviewSettings,
 } from './final-preview';
+import { IconPickerModal } from './ui/icon-picker-modal';
 import { createAnnotateBlockAppearanceSettingDefinitions } from './ui/annotate-block-appearance-settings';
 import { renderTextGroupAppearanceSettings } from './ui/text-group-appearance-settings';
 import { appendAnnotatedText } from './text-group/dom';
@@ -463,14 +464,28 @@ class FastGroupPresetPage extends SettingPage {
 			});
 		new Setting(contentEl)
 			.setName('Icon')
-			.setDesc('Lucide icon name (e.g. "star"). Leave empty for no icon.')
-			.addText((input) => {
-				input
-					.setValue(this.preset.icon ?? '')
-					.onChange(async (value) => {
-						this.preset.icon = value.trim();
-						await onChange();
-					});
+			.setDesc('Icon shown on the preset button.')
+			.addButton((button) => {
+				const renderButton = () => {
+					button.buttonEl.empty();
+					if (this.preset.icon) {
+						button.setIcon(this.preset.icon);
+						button.buttonEl.createSpan({ text: this.preset.icon });
+					} else {
+						button.setButtonText('Choose icon');
+					}
+				};
+				renderButton();
+				button.onClick(() => {
+					new IconPickerModal(
+						this.plugin.app,
+						this.preset.icon,
+						(icon) => {
+							this.preset.icon = icon;
+							void onChange().then(renderButton);
+						},
+					).open();
+				});
 			});
 		renderTextGroupAppearanceSettings(contentEl, this.preset.appearance, {
 			onChange,
