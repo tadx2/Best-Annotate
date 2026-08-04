@@ -78,7 +78,6 @@ export function createAnnotateContentElement(
 	appearance: AnnotateBlockAppearance,
 ) {
 	const content = wrapper.ownerDocument.createElement('div');
-	content.classList.add('ba-annotate-content');
 	wrapper.appendChild(content);
 	const wrapperStyles: Record<string, string> = {};
 	const contentStyles: Record<string, string> = {};
