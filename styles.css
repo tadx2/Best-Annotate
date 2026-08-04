@@ -102,6 +102,16 @@
 	display: none;
 }
 
+.ba-buttons-set-cancel-row {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.ba-buttons-set-cancel-row button {
+	padding: var(--size-2-1) var(--size-2-2);
+	line-height: 1;
+}
+
 .ba-buttons-set-range,
 .ba-buttons-set-fast-group,
 .ba-buttons-set-group {
@@ -111,6 +121,7 @@
 	gap: var(--size-2-2);
 }
 
+.ba-buttons-set-cancel-row[hidden],
 .ba-buttons-set-range[hidden],
 .ba-buttons-set-fast-group[hidden],
 .ba-buttons-set-group[hidden],

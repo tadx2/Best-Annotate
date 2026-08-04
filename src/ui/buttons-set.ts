@@ -16,9 +16,10 @@ export interface ButtonsSetCallbacks {
 }
 
 export class ButtonsSet {
-	private readonly rangeSection: HTMLElement;
+	private readonly cancelRow: HTMLElement;
 	private readonly fastGroupSection: HTMLElement;
 	private readonly fastGroupRow: HTMLElement;
+	private readonly rangeSection: HTMLElement;
 	private readonly groupSection: HTMLElement;
 	private readonly pasteButton: ButtonComponent;
 
@@ -26,17 +27,12 @@ export class ButtonsSet {
 		private readonly containerEl: HTMLElement,
 		private readonly callbacks: ButtonsSetCallbacks,
 	) {
-		this.rangeSection = containerEl.createDiv('ba-buttons-set-range');
-		const rangeRow = this.rangeSection.createDiv(
-			'ba-annotate-segment-action-row',
-		);
-		const createGroupButton = new ButtonComponent(rangeRow)
-			.setButtonText('Create group')
-			.onClick(() => this.callbacks.onCreateGroup());
-		createGroupButton.buttonEl.addClass('ba-annotate-group-button');
-		new ButtonComponent(rangeRow)
-			.setButtonText('Cancel')
+		this.cancelRow = containerEl.createDiv('ba-buttons-set-cancel-row');
+		const cancelButton = new ButtonComponent(this.cancelRow)
+			.setIcon('x')
+			.setTooltip('Cancel')
 			.onClick(() => this.callbacks.onCancel());
+		cancelButton.buttonEl.setAttribute('aria-label', 'Cancel');
 
 		this.fastGroupSection = containerEl.createDiv(
 			'ba-buttons-set-fast-group',
@@ -45,18 +41,31 @@ export class ButtonsSet {
 			'ba-annotate-segment-action-row',
 		);
 
+		this.rangeSection = containerEl.createDiv('ba-buttons-set-range');
+		const rangeRow = this.rangeSection.createDiv(
+			'ba-annotate-segment-action-row',
+		);
+		const createGroupButton = new ButtonComponent(rangeRow)
+			.setIcon('plus')
+			.setButtonText('Create')
+			.onClick(() => this.callbacks.onCreateGroup());
+		createGroupButton.buttonEl.addClass('ba-annotate-group-button');
+
 		this.groupSection = containerEl.createDiv('ba-buttons-set-group');
 		const groupRow = this.groupSection.createDiv(
 			'ba-annotate-segment-action-row',
 		);
 		new ButtonComponent(groupRow)
-			.setButtonText('Copy group setting')
+			.setIcon('copy')
+			.setButtonText('Copy')
 			.onClick(() => this.callbacks.onCopyGroupSetting());
 		this.pasteButton = new ButtonComponent(groupRow)
-			.setButtonText('Paste group setting')
+			.setIcon('clipboard')
+			.setButtonText('Paste')
 			.onClick(() => this.callbacks.onPasteGroupSetting());
 		new ButtonComponent(groupRow)
-			.setButtonText('Clear group setting')
+			.setIcon('eraser')
+			.setButtonText('Clear')
 			.onClick(() => this.callbacks.onClearGroupSetting());
 	}
 
@@ -80,8 +89,9 @@ export class ButtonsSet {
 
 	update(selection: PreviewSelectionState, canPaste: boolean) {
 		this.containerEl.hidden = selection.type === 'none';
-		this.rangeSection.hidden = selection.type !== 'range';
+		this.cancelRow.hidden = selection.type !== 'range';
 		this.fastGroupSection.hidden = selection.type === 'none';
+		this.rangeSection.hidden = selection.type !== 'range';
 		this.groupSection.hidden = selection.type !== 'group';
 		this.pasteButton.buttonEl.disabled = !canPaste;
 	}
