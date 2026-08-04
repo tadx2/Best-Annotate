@@ -302,7 +302,7 @@ export class EditAnnotateModal extends Modal {
 			{
 				onCreateGroup: () => this.createTextGroups(),
 				onCancel: () => this.cancelSelection(),
-				onFastGroupPreset: (preset) => this.createTextGroups(preset),
+				onFastGroupPreset: (preset) => this.applyFastGroupPreset(preset),
 				onCopyGroupSetting: () => this.copyTextGroupSetting(),
 				onPasteGroupSetting: () => this.pasteTextGroupSetting(),
 				onClearGroupSetting: () => this.clearTextGroupAll(),
@@ -831,6 +831,20 @@ export class EditAnnotateModal extends Modal {
 				displayMode: 'tabs',
 			},
 		);
+	}
+
+	private applyFastGroupPreset(preset: FastGroupPreset) {
+		if (this.selection.type === 'range') {
+			this.createTextGroups(preset);
+			return;
+		}
+
+		const group = this.getSelectedTextGroup();
+		if (!group) return;
+
+		group.appearance = cloneTextGroupAppearance(preset.appearance);
+		this.renderSelectedTextGroup();
+		this.renderFinalPreview();
 	}
 
 	private createTextGroups(preset?: FastGroupPreset) {

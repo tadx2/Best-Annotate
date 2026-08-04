@@ -103,6 +103,7 @@
 }
 
 .ba-buttons-set-range,
+.ba-buttons-set-fast-group,
 .ba-buttons-set-group {
 	display: flex;
 	flex-direction: column;
@@ -111,6 +112,7 @@
 }
 
 .ba-buttons-set-range[hidden],
+.ba-buttons-set-fast-group[hidden],
 .ba-buttons-set-group[hidden],
 .ba-annotate-segment-action-row[hidden] {
 	display: none;

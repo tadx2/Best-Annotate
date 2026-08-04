@@ -17,6 +17,7 @@ export interface ButtonsSetCallbacks {
 
 export class ButtonsSet {
 	private readonly rangeSection: HTMLElement;
+	private readonly fastGroupSection: HTMLElement;
 	private readonly fastGroupRow: HTMLElement;
 	private readonly groupSection: HTMLElement;
 	private readonly pasteButton: ButtonComponent;
@@ -36,7 +37,11 @@ export class ButtonsSet {
 		new ButtonComponent(rangeRow)
 			.setButtonText('Cancel')
 			.onClick(() => this.callbacks.onCancel());
-		this.fastGroupRow = this.rangeSection.createDiv(
+
+		this.fastGroupSection = containerEl.createDiv(
+			'ba-buttons-set-fast-group',
+		);
+		this.fastGroupRow = this.fastGroupSection.createDiv(
 			'ba-annotate-segment-action-row',
 		);
 
@@ -76,6 +81,7 @@ export class ButtonsSet {
 	update(selection: PreviewSelectionState, canPaste: boolean) {
 		this.containerEl.hidden = selection.type === 'none';
 		this.rangeSection.hidden = selection.type !== 'range';
+		this.fastGroupSection.hidden = selection.type === 'none';
 		this.groupSection.hidden = selection.type !== 'group';
 		this.pasteButton.buttonEl.disabled = !canPaste;
 	}
