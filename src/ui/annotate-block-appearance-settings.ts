@@ -1,12 +1,12 @@
 import {
 	ButtonComponent,
 	ColorComponent,
+	ExtraButtonComponent,
 	Setting,
 	SettingDefinition,
 	SettingDefinitionGroup,
 	SliderComponent,
 	TextComponent,
-	ToggleComponent,
 } from 'obsidian';
 import {
 	AnnotateBlockAlignment,
@@ -303,18 +303,10 @@ export function renderAnnotateBlockAppearanceSettings(
 		AnnotateBlockColorKey,
 		() => void
 	>();
-	const onNumberOverrideChange = (
-		key: AnnotateBlockNumberKey,
-		enabled: boolean,
-	) => {
-		applySpacingOverrideExclusivity(appearance, key, enabled);
+	const onNumberValueChange = () => {
 		for (const refresh of numberSettingRefreshers.values()) refresh();
 	};
-	const onColorOverrideChange = (
-		key: AnnotateBlockColorKey,
-		enabled: boolean,
-	) => {
-		applyMarginColorBackground(appearance, key, enabled);
+	const onColorValueChange = () => {
 		for (const refresh of colorSettingRefreshers.values()) refresh();
 	};
 	for (const section of ANNOTATE_BLOCK_APPEARANCE_SECTIONS) {
@@ -338,7 +330,7 @@ export function renderAnnotateBlockAppearanceSettings(
 				spec,
 				options.onChange,
 				() => refreshAlignmentState(),
-				onNumberOverrideChange,
+				onNumberValueChange,
 			);
 			numberSettingRefreshers.set(spec.key, refresh);
 		}
@@ -352,7 +344,7 @@ export function renderAnnotateBlockAppearanceSettings(
 				appearance,
 				spec,
 				options.onChange,
-				onColorOverrideChange,
+				onColorValueChange,
 			);
 			colorSettingRefreshers.set(spec.key, refresh);
 		}
@@ -400,18 +392,10 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 		AnnotateBlockColorKey,
 		() => void
 	>();
-	const onNumberOverrideChange = (
-		key: AnnotateBlockNumberKey,
-		enabled: boolean,
-	) => {
-		applySpacingOverrideExclusivity(appearance, key, enabled);
+	const onNumberValueChange = () => {
 		for (const refresh of numberSettingRefreshers.values()) refresh();
 	};
-	const onColorOverrideChange = (
-		key: AnnotateBlockColorKey,
-		enabled: boolean,
-	) => {
-		applyMarginColorBackground(appearance, key, enabled);
+	const onColorValueChange = () => {
 		for (const refresh of colorSettingRefreshers.values()) refresh();
 	};
 
@@ -430,7 +414,7 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 						spec,
 						options.onChange,
 						() => refreshAlignmentState(),
-						onNumberOverrideChange,
+						onNumberValueChange,
 					);
 					numberSettingRefreshers.set(spec.key, refresh);
 				},
@@ -446,7 +430,7 @@ export function createAnnotateBlockAppearanceSettingDefinitions(
 						appearance,
 						spec,
 						options.onChange,
-						onColorOverrideChange,
+						onColorValueChange,
 					);
 					colorSettingRefreshers.set(spec.key, refresh);
 				},
@@ -497,96 +481,91 @@ function renderNumberSetting(
 	spec: AnnotateBlockAppearanceSettingSpec,
 	onChange: () => void | Promise<void>,
 	onMaxWidthChange: () => void,
-	onOverrideChange: (
-		key: AnnotateBlockNumberKey,
-		enabled: boolean,
-	) => void,
+	onValueChange: () => void,
 ) {
-	const hasOverride = appearance[spec.key] !== null;
 	let slider: SliderComponent | null = null;
 	let numberInput: TextComponent | null = null;
-	let toggle: ToggleComponent | null = null;
+	let clearButton: ExtraButtonComponent | null = null;
+
+	const applyValue = (value: number | null) => {
+		appearance[spec.key] = value;
+		if (value !== null) {
+			applySpacingOverrideExclusivity(appearance, spec.key);
+		}
+		if (spec.key === 'paragraphMaxWidth') {
+			if (value === null) appearance.paragraphAlignment = null;
+			onMaxWidthChange();
+		}
+		onValueChange();
+		void onChange();
+	};
 
 	setting.addText((component) => {
-			numberInput = component;
-			component.setValue(
-				formatNumberValue(appearance[spec.key] ?? spec.initialValue),
-			);
-			component.inputEl.type = 'number';
-			component.inputEl.step = 'any';
-			component.inputEl.disabled = !hasOverride;
-			component.inputEl.addClass('ba-annotate-number-input');
-			component.inputEl.addEventListener('change', () => {
-				const value = parseNumberInputValue(component);
-				if (value === null) {
-					component.setValue(
-						formatNumberValue(
-							slider?.getValue() ?? spec.initialValue,
-						),
-					);
-					return;
-				}
+		numberInput = component;
+		const current = appearance[spec.key];
+		if (current !== null) {
+			component.setValue(formatNumberValue(current));
+		}
+		component.setPlaceholder(formatNumberValue(spec.initialValue));
+		component.inputEl.type = 'number';
+		component.inputEl.step = 'any';
+		component.inputEl.addClass('ba-annotate-number-input');
+		component.inputEl.addEventListener('change', () => {
+			const rawValue = component.getValue().trim();
+			if (!rawValue) {
+				applyValue(null);
+				return;
+			}
+			const value = Number(rawValue);
+			if (!Number.isFinite(value)) {
+				const fallback = appearance[spec.key];
+				component.setValue(
+					fallback === null ? '' : formatNumberValue(fallback),
+				);
+				return;
+			}
 
-				component.setValue(formatNumberValue(value));
-				slider?.setValue(value);
-				if (appearance[spec.key] === null) return;
-				appearance[spec.key] = value;
-				void onChange();
-			});
+			component.setValue(formatNumberValue(value));
+			slider?.setValue(value);
+			applyValue(value);
 		});
+	});
 	setting.controlEl.createSpan({
 		cls: 'ba-annotate-number-unit',
 		text: spec.unit,
 	});
-	setting
-		.addSlider((component) => {
-			slider = component;
-			component
-				.setLimits(spec.min, spec.max, spec.step)
-				.setValue(appearance[spec.key] ?? spec.initialValue)
-				.setInstant(true)
-				.setDisabled(!hasOverride)
-				.onChange((value) => {
-					if (appearance[spec.key] === null) return;
-					appearance[spec.key] = value;
-					numberInput?.setValue(formatNumberValue(value));
-					return onChange();
-				});
-			component.sliderEl.nextElementSibling?.remove();
-		})
-		.addToggle((component) => {
-			toggle = component;
-			component.setValue(hasOverride).onChange((enabled) => {
-				const linkedValue = enabled
-					? getLinkedSpacingValue(appearance, spec.key)
-					: null;
-				const value =
-					linkedValue ??
-					getNumberInputValue(numberInput, spec.initialValue);
-				if (enabled) {
-					numberInput?.setValue(formatNumberValue(value));
-					slider?.setValue(value);
-				}
-				appearance[spec.key] = enabled ? value : null;
-				onOverrideChange(spec.key, enabled);
-				if (spec.key === 'paragraphMaxWidth') {
-					if (!enabled) appearance.paragraphAlignment = null;
-					onMaxWidthChange();
-				}
-				return onChange();
+	setting.addSlider((component) => {
+		slider = component;
+		component
+			.setLimits(spec.min, spec.max, spec.step)
+			.setValue(appearance[spec.key] ?? spec.initialValue)
+			.setInstant(true)
+			.onChange((value) => {
+				numberInput?.setValue(formatNumberValue(value));
+				applyValue(value);
 			});
-		});
+		component.sliderEl.nextElementSibling?.remove();
+	});
+	setting.addExtraButton((component) => {
+		clearButton = component;
+		component
+			.setIcon('x')
+			.setTooltip('Clear')
+			.onClick(() => {
+				if (appearance[spec.key] === null) return;
+				applyValue(null);
+			});
+	});
 
 	const refresh = () => {
 		const value = appearance[spec.key];
-		const enabled = value !== null;
-		slider?.setDisabled(!enabled);
-		if (numberInput) numberInput.inputEl.disabled = !enabled;
-		toggle?.setValue(enabled);
 		if (value !== null) {
 			numberInput?.setValue(formatNumberValue(value));
 			slider?.setValue(value);
+		} else {
+			numberInput?.setValue('');
 		}
+		clearButton?.setDisabled(value === null);
 	};
 	refresh();
 	return refresh;
@@ -597,51 +576,44 @@ function renderColorSetting(
 	appearance: AnnotateBlockAppearance,
 	spec: AnnotateBlockColorSettingSpec,
 	onChange: () => void | Promise<void>,
-	onOverrideChange: (
-		key: AnnotateBlockColorKey,
-		enabled: boolean,
-	) => void,
+	onValueChange: () => void,
 ) {
-	const hasOverride = appearance[spec.key] !== null;
 	let colorPicker: ColorComponent | null = null;
-	let colorInput: HTMLInputElement | null = null;
-	let toggle: ToggleComponent | null = null;
+	let clearButton: ExtraButtonComponent | null = null;
 
 	setting
 		.addColorPicker((component) => {
 			colorPicker = component;
-			colorInput = setting.controlEl.querySelector(
-				'input[type="color"]',
-			);
-			if (colorInput) colorInput.disabled = !hasOverride;
 			component
 				.setValue(
 					appearance[spec.key] ?? DEFAULT_ANNOTATE_BLOCK_COLOR,
 				)
 				.onChange((value) => {
-					if (appearance[spec.key] === null) return;
+					if (appearance[spec.key] === null) {
+						applyMarginColorBackground(appearance, spec.key);
+					}
 					appearance[spec.key] = value;
+					onValueChange();
 					return onChange();
 				});
 		})
-		.addToggle((component) => {
-			toggle = component;
-			component.setValue(hasOverride).onChange((enabled) => {
-				if (colorInput) colorInput.disabled = !enabled;
-				appearance[spec.key] = enabled
-					? colorPicker?.getValue() ?? DEFAULT_ANNOTATE_BLOCK_COLOR
-					: null;
-				onOverrideChange(spec.key, enabled);
-				return onChange();
-			});
+		.addExtraButton((component) => {
+			clearButton = component;
+			component
+				.setIcon('x')
+				.setTooltip('Clear')
+				.onClick(() => {
+					if (appearance[spec.key] === null) return;
+					appearance[spec.key] = null;
+					onValueChange();
+					return onChange();
+				});
 		});
 
 	const refresh = () => {
 		const value = appearance[spec.key];
-		const enabled = value !== null;
-		if (colorInput) colorInput.disabled = !enabled;
-		toggle?.setValue(enabled);
 		if (value !== null) colorPicker?.setValue(value);
+		clearButton?.setDisabled(value === null);
 	};
 	refresh();
 	return refresh;
@@ -650,11 +622,9 @@ function renderColorSetting(
 function applyMarginColorBackground(
 	appearance: AnnotateBlockAppearance,
 	key: AnnotateBlockColorKey,
-	enabled: boolean,
 ) {
 	if (
 		key === 'paragraphMarginColor' &&
-		enabled &&
 		appearance.paragraphBackgroundColor === null
 	) {
 		appearance.paragraphBackgroundColor =
@@ -666,45 +636,10 @@ function formatNumberValue(value: number) {
 	return String(Number(value.toFixed(4)));
 }
 
-function getNumberInputValue(
-	input: TextComponent | null,
-	fallback: number,
-) {
-	return parseNumberInputValue(input) ?? fallback;
-}
-
-function parseNumberInputValue(input: TextComponent | null) {
-	const rawValue = input?.getValue().trim();
-	if (!rawValue) return null;
-	const value = Number(rawValue);
-	return Number.isFinite(value) ? value : null;
-}
-
-function getLinkedSpacingValue(
-	appearance: AnnotateBlockAppearance,
-	key: AnnotateBlockNumberKey,
-) {
-	if (key === 'paragraphMarginAll') {
-		return getFirstSpacingValue(appearance, MARGIN_SIDE_KEYS);
-	}
-	if (isSpacingSideKey(key, MARGIN_SIDE_KEYS)) {
-		return appearance.paragraphMarginAll;
-	}
-	if (key === 'paragraphPaddingAll') {
-		return getFirstSpacingValue(appearance, PADDING_SIDE_KEYS);
-	}
-	if (isSpacingSideKey(key, PADDING_SIDE_KEYS)) {
-		return appearance.paragraphPaddingAll;
-	}
-	return null;
-}
-
 function applySpacingOverrideExclusivity(
 	appearance: AnnotateBlockAppearance,
 	key: AnnotateBlockNumberKey,
-	enabled: boolean,
 ) {
-	if (!enabled) return;
 	if (key === 'paragraphMarginAll') {
 		clearSpacingSides(appearance, MARGIN_SIDE_KEYS);
 	} else if (isSpacingSideKey(key, MARGIN_SIDE_KEYS)) {
@@ -714,17 +649,6 @@ function applySpacingOverrideExclusivity(
 	} else if (isSpacingSideKey(key, PADDING_SIDE_KEYS)) {
 		appearance.paragraphPaddingAll = null;
 	}
-}
-
-function getFirstSpacingValue(
-	appearance: AnnotateBlockAppearance,
-	keys: readonly AnnotateBlockNumberKey[],
-) {
-	for (const key of keys) {
-		const value = appearance[key];
-		if (value !== null) return value;
-	}
-	return null;
 }
 
 function clearSpacingSides(
@@ -763,7 +687,7 @@ function renderIconAlignmentSetting(
 ) {
 	let selectedAlignment = appearance[key] ?? 'left';
 	const buttons = new Map<AnnotateBlockAlignment, ButtonComponent>();
-	let toggle: ToggleComponent | null = null;
+	let clearButton: ExtraButtonComponent | null = null;
 	const options: Array<{
 		value: AnnotateBlockAlignment;
 		icon: string;
@@ -781,9 +705,9 @@ function renderIconAlignmentSetting(
 			'ba-annotate-setting-disabled',
 			!available,
 		);
-		toggle?.setDisabled(!available).setValue(enabled);
+		clearButton?.setDisabled(!available || !enabled);
 		for (const [value, button] of buttons) {
-			button.buttonEl.disabled = !available || !enabled;
+			button.buttonEl.disabled = !available;
 			button.buttonEl.toggleClass(
 				'is-active',
 				enabled && value === selectedAlignment,
@@ -800,9 +724,14 @@ function renderIconAlignmentSetting(
 			.setIcon(option.icon)
 			.setTooltip(option.label)
 			.onClick(() => {
-				if (appearance[key] === null || !isAvailable()) return;
-				selectedAlignment = option.value;
-				appearance[key] = option.value;
+				if (!isAvailable()) return;
+				if (appearance[key] === option.value) {
+					// Clicking the active option again clears the override.
+					appearance[key] = null;
+				} else {
+					selectedAlignment = option.value;
+					appearance[key] = option.value;
+				}
 				updateControls();
 				return onChange();
 			});
@@ -810,13 +739,14 @@ function renderIconAlignmentSetting(
 		buttons.set(option.value, button);
 	}
 
-	setting.addToggle((component) => {
-		toggle = component;
+	setting.addExtraButton((component) => {
+		clearButton = component;
 		component
-			.setValue(appearance[key] !== null)
-			.onChange((enabled) => {
-				if (!isAvailable()) return;
-				appearance[key] = enabled ? selectedAlignment : null;
+			.setIcon('x')
+			.setTooltip('Clear')
+			.onClick(() => {
+				if (!isAvailable() || appearance[key] === null) return;
+				appearance[key] = null;
 				updateControls();
 				return onChange();
 			});
