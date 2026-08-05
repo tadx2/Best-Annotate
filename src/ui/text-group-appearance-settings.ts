@@ -1,8 +1,7 @@
 import {
-	ColorComponent,
+	ExtraButtonComponent,
 	Setting,
 	SettingDefinitionGroup,
-	SliderComponent,
 	TextComponent,
 } from 'obsidian';
 import {
@@ -44,13 +43,19 @@ type BooleanKey =
 	| 'annotateVisible'
 	| 'annotateCompact';
 
+interface AppearanceSettingsContext {
+	onChange: () => void | Promise<void>;
+	registerRefresher: (refresh: () => void) => void;
+	refreshAll: () => void;
+}
+
 interface AppearanceSettingSpec {
 	section: AppearanceSection;
 	name: string;
 	render: (
 		setting: Setting,
 		appearance: TextGroupAppearance,
-		onChange: () => void | Promise<void>,
+		ctx: AppearanceSettingsContext,
 	) => void;
 }
 
@@ -58,59 +63,59 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 	{
 		section: 'Text',
 		name: 'Text color',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderColorOverride(
 				setting,
 				appearance,
 				'textColor',
 				DEFAULT_GROUP_COLOR,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Text',
 		name: 'Text background',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderColorOverride(
 				setting,
 				appearance,
 				'textBackgroundColor',
 				DEFAULT_GROUP_COLOR,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Underline',
 		name: 'Show underline',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderBooleanPropertyToggle(
 				setting,
 				appearance,
 				'underline',
 				true,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Underline',
 		name: 'Underline color',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderColorOverride(
 				setting,
 				appearance,
 				'underlineColor',
 				DEFAULT_GROUP_COLOR,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Underline',
 		name: 'Underline thickness',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderNumberOverride(
 				setting,
 				appearance,
@@ -120,14 +125,14 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 				8,
 				0.5,
 				(value) => `${value}px`,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Underline',
 		name: 'Distance from text',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderNumberOverride(
 				setting,
 				appearance,
@@ -137,39 +142,39 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 				12,
 				1,
 				(value) => `${value}px`,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Annotate',
 		name: 'Annotate text',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderTextOverride(
 				setting,
 				appearance,
 				'Enter annotate text',
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Annotate',
 		name: 'Annotate color',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderColorOverride(
 				setting,
 				appearance,
 				'annotateColor',
 				DEFAULT_GROUP_COLOR,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Annotate',
 		name: 'Annotate size',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderNumberOverride(
 				setting,
 				appearance,
@@ -179,14 +184,14 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 				2,
 				0.05,
 				(value) => `${Math.round(value * 100)}%`,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Annotate',
 		name: 'Horizontal position',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderNumberOverride(
 				setting,
 				appearance,
@@ -196,14 +201,14 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 				20,
 				1,
 				(value) => `${value}px`,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Annotate',
 		name: 'Vertical position',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderNumberOverride(
 				setting,
 				appearance,
@@ -213,14 +218,14 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 				20,
 				1,
 				(value) => `${value}px`,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Annotate',
 		name: 'Annotate spacing',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderNumberOverride(
 				setting,
 				appearance,
@@ -230,20 +235,20 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 				20,
 				1,
 				(value) => `${value}px`,
-				onChange,
+				ctx,
 			);
 		},
 	},
 	{
 		section: 'Annotate',
 		name: 'Hide annotate',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderBooleanPropertyToggle(
 				setting,
 				appearance,
 				'annotateVisible',
 				false,
-				onChange,
+				ctx,
 			);
 		},
 	},
@@ -255,48 +260,65 @@ const APPEARANCE_SETTING_SPECS: AppearanceSettingSpec[] = [
 	{
 		section: 'Annotate',
 		name: 'Compact layout',
-		render: (setting, appearance, onChange) => {
+		render: (setting, appearance, ctx) => {
 			renderBooleanPropertyToggle(
 				setting,
 				appearance,
 				'annotateCompact',
 				true,
-				onChange,
+				ctx,
 			);
 		},
 	},
 ];
+
+const UNDERLINE_VISUAL_KEYS: ReadonlySet<string> = new Set([
+	'underlineColor',
+	'underlineThickness',
+	'underlineOffset',
+]);
+
+function autoShowUnderline(
+	appearance: TextGroupAppearance,
+	key: ColorKey | NumberKey,
+) {
+	if (UNDERLINE_VISUAL_KEYS.has(key) && appearance.underline !== true) {
+		appearance.underline = true;
+	}
+}
 
 function renderColorOverride(
 	setting: Setting,
 	appearance: TextGroupAppearance,
 	key: ColorKey,
 	fallback: string,
-	onChange: () => void | Promise<void>,
+	ctx: AppearanceSettingsContext,
 ) {
-	let value = appearance[key] ?? fallback;
-	let picker: ColorComponent | null = null;
-	let colorInput: HTMLInputElement | null = null;
-	const enabled = appearance[key] !== null;
+	let clearButton: ExtraButtonComponent | null = null;
 	setting
 		.addColorPicker((component) => {
-			picker = component;
-			component.setValue(value).onChange((nextValue) => {
-				value = nextValue;
-				if (appearance[key] === null) return;
-				appearance[key] = nextValue;
-				return onChange();
-			});
-			colorInput = setting.controlEl.querySelector('input[type="color"]');
-			if (colorInput) colorInput.disabled = !enabled;
+			component
+				.setValue(appearance[key] ?? fallback)
+				.onChange((nextValue) => {
+					appearance[key] = nextValue;
+					autoShowUnderline(appearance, key);
+					clearButton?.setDisabled(false);
+					ctx.refreshAll();
+					return ctx.onChange();
+				});
 		})
-		.addToggle((toggle) => {
-			toggle.setTooltip('Override').setValue(enabled).onChange((active) => {
-				if (colorInput) colorInput.disabled = !active;
-				value = picker?.getValue() ?? value;
-				appearance[key] = active ? value : null;
-				return onChange();
-			});
+		.addExtraButton((component) => {
+			clearButton = component;
+			component
+				.setIcon('x')
+				.setTooltip('Clear')
+				.setDisabled(appearance[key] === null)
+				.onClick(() => {
+					if (appearance[key] === null) return;
+					appearance[key] = null;
+					component.setDisabled(true);
+					return ctx.onChange();
+				});
 		});
 }
 
@@ -309,33 +331,36 @@ function renderNumberOverride(
 	max: number,
 	step: number,
 	display: (value: number) => string,
-	onChange: () => void | Promise<void>,
+	ctx: AppearanceSettingsContext,
 ) {
-	let value = appearance[key] ?? fallback;
-	let slider: SliderComponent | null = null;
-	const enabled = appearance[key] !== null;
+	let clearButton: ExtraButtonComponent | null = null;
 	setting
 		.addSlider((component) => {
-			slider = component;
 			component
 				.setLimits(min, max, step)
-				.setValue(value)
+				.setValue(appearance[key] ?? fallback)
 				.setDisplayFormat(display)
 				.setInstant(true)
-				.setDisabled(!enabled)
 				.onChange((nextValue) => {
-					value = nextValue;
-					if (appearance[key] === null) return;
 					appearance[key] = nextValue;
-					return onChange();
+					autoShowUnderline(appearance, key);
+					clearButton?.setDisabled(false);
+					ctx.refreshAll();
+					return ctx.onChange();
 				});
 		})
-		.addToggle((toggle) => {
-			toggle.setTooltip('Override').setValue(enabled).onChange((active) => {
-				slider?.setDisabled(!active);
-				appearance[key] = active ? value : null;
-				return onChange();
-			});
+		.addExtraButton((component) => {
+			clearButton = component;
+			component
+				.setIcon('x')
+				.setTooltip('Clear')
+				.setDisabled(appearance[key] === null)
+				.onClick(() => {
+					if (appearance[key] === null) return;
+					appearance[key] = null;
+					component.setDisabled(true);
+					return ctx.onChange();
+				});
 		});
 }
 
@@ -343,31 +368,35 @@ function renderTextOverride(
 	setting: Setting,
 	appearance: TextGroupAppearance,
 	placeholder: string,
-	onChange: () => void | Promise<void>,
+	ctx: AppearanceSettingsContext,
 ) {
-	let value = appearance.annotate ?? '';
 	let input: TextComponent | null = null;
-	const enabled = appearance.annotate !== null;
+	let clearButton: ExtraButtonComponent | null = null;
 	setting
 		.addText((component) => {
 			input = component;
 			component
 				.setPlaceholder(placeholder)
-				.setValue(value)
-				.setDisabled(!enabled)
+				.setValue(appearance.annotate ?? '')
 				.onChange((nextValue) => {
-					value = nextValue;
-					if (appearance.annotate === null) return;
-					appearance.annotate = nextValue;
-					return onChange();
+					appearance.annotate = nextValue.trim() ? nextValue : null;
+					clearButton?.setDisabled(appearance.annotate === null);
+					return ctx.onChange();
 				});
 		})
-		.addToggle((toggle) => {
-			toggle.setTooltip('Override').setValue(enabled).onChange((active) => {
-				input?.setDisabled(!active);
-				appearance.annotate = active ? value : null;
-				return onChange();
-			});
+		.addExtraButton((component) => {
+			clearButton = component;
+			component
+				.setIcon('x')
+				.setTooltip('Clear')
+				.setDisabled(appearance.annotate === null)
+				.onClick(() => {
+					if (appearance.annotate === null) return;
+					appearance.annotate = null;
+					input?.setValue('');
+					component.setDisabled(true);
+					return ctx.onChange();
+				});
 		});
 }
 
@@ -376,30 +405,36 @@ function renderBooleanPropertyToggle(
 	appearance: TextGroupAppearance,
 	key: BooleanKey,
 	activeValue: boolean,
-	onChange: () => void | Promise<void>,
+	ctx: AppearanceSettingsContext,
 ) {
 	setting.addToggle((toggle) => {
 		toggle
 			.setValue(appearance[key] === activeValue)
 			.onChange((active) => {
 				appearance[key] = active ? activeValue : null;
-				return onChange();
+				return ctx.onChange();
 			});
+		ctx.registerRefresher(() => {
+			toggle.setValue(appearance[key] === activeValue);
+		});
 	});
 }
 
 function renderPositionOverride(
 	setting: Setting,
 	appearance: TextGroupAppearance,
-	onChange: () => void | Promise<void>,
+	ctx: AppearanceSettingsContext,
 ) {
 	setting.addToggle((toggle) => {
 		toggle
 			.setValue(appearance.annotatePosition === 'under')
 			.onChange((active) => {
 				appearance.annotatePosition = active ? 'under' : null;
-				return onChange();
+				return ctx.onChange();
 			});
+		ctx.registerRefresher(() => {
+			toggle.setValue(appearance.annotatePosition === 'under');
+		});
 	});
 }
 
@@ -493,10 +528,18 @@ function renderAppearanceSection(
 	appearance: TextGroupAppearance,
 	onChange: () => void | Promise<void>,
 ) {
+	const refreshers: Array<() => void> = [];
+	const ctx: AppearanceSettingsContext = {
+		onChange,
+		registerRefresher: (refresh) => refreshers.push(refresh),
+		refreshAll: () => {
+			for (const refresh of refreshers) refresh();
+		},
+	};
 	for (const spec of APPEARANCE_SETTING_SPECS) {
 		if (spec.section !== section) continue;
 		const setting = new Setting(container).setName(spec.name);
-		spec.render(setting, appearance, onChange);
+		spec.render(setting, appearance, ctx);
 	}
 }
 
@@ -504,16 +547,26 @@ export function createTextGroupAppearanceSettingDefinitions(
 	appearance: TextGroupAppearance,
 	options: TextGroupAppearanceSettingsOptions,
 ): SettingDefinitionGroup[] {
-	return APPEARANCE_SECTIONS.map((section) => ({
-		type: 'group',
-		heading: section,
-		items: APPEARANCE_SETTING_SPECS.filter(
-			(spec) => spec.section === section,
-		).map((spec) => ({
-			name: spec.name,
-			render: (setting: Setting) => {
-				spec.render(setting, appearance, options.onChange);
+	return APPEARANCE_SECTIONS.map((section) => {
+		const refreshers: Array<() => void> = [];
+		const ctx: AppearanceSettingsContext = {
+			onChange: options.onChange,
+			registerRefresher: (refresh) => refreshers.push(refresh),
+			refreshAll: () => {
+				for (const refresh of refreshers) refresh();
 			},
-		})),
-	}));
+		};
+		return {
+			type: 'group',
+			heading: section,
+			items: APPEARANCE_SETTING_SPECS.filter(
+				(spec) => spec.section === section,
+			).map((spec) => ({
+				name: spec.name,
+				render: (setting: Setting) => {
+					spec.render(setting, appearance, ctx);
+				},
+			})),
+		};
+	});
 }
