@@ -41,12 +41,13 @@
 
 .ba-annotate-groups-list-item {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: var(--size-2-3);
-	padding: var(--size-2-2) var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--input-radius);
 	cursor: pointer;
+	font-size: var(--font-ui-medium);
 }
 
 .ba-annotate-groups-list-item.is-active-text-group {
@@ -72,14 +73,16 @@
 	flex-shrink: 0;
 	padding: 0 var(--size-2-2);
 	background: transparent;
+	border-radius: var(--radius-s);
 	box-shadow: none;
-	color: var(--text-muted);
+	color: transparent;
+	font-size: var(--font-ui-larger);
 	line-height: 1;
 }
 
 .ba-annotate-groups-list-item-ungroup:hover {
-	background: transparent;
-	color: var(--text-normal);
+	background: var(--text-error);
+	color: #fff;
 }
 
 .ba-annotate-final-preview-wrap {
@@ -526,6 +529,10 @@
 	background-color: var(--background-primary);
 }
 
+.ba-annotate-group-settings-tab-panel {
+	padding-top: var(--size-4-4);
+}
+
 .ba-annotate-group-settings-tab-panel[hidden] {
 	display: none;
 }
@@ -628,4 +635,16 @@
 .ba-buttons-set-drag-handle.is-dragging {
 	cursor: grabbing;
 	color: var(--text-normal);
+}
+
+.ba-clear-button:hover {
+	background: var(--text-error);
+	border-radius: var(--radius-s);
+	color: #fff;
+}
+
+.ba-clear-button.is-disabled:hover,
+.ba-clear-button:disabled:hover {
+	background: transparent;
+	color: var(--text-muted);
 }

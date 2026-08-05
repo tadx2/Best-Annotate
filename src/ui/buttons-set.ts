@@ -34,6 +34,7 @@ export class ButtonsSet {
 			.setTooltip('Cancel')
 			.onClick(() => this.callbacks.onCancel());
 		cancelButton.buttonEl.setAttribute('aria-label', 'Cancel');
+		cancelButton.buttonEl.addClass('ba-clear-button');
 
 		this.fastGroupSection = contentEl.createDiv(
 			'ba-buttons-set-fast-group',

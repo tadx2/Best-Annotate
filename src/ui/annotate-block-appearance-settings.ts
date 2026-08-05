@@ -548,6 +548,7 @@ function renderNumberSetting(
 	});
 	setting.addExtraButton((component) => {
 		clearButton = component;
+		component.extraSettingsEl.addClass('ba-clear-button');
 		component
 			.setIcon('x')
 			.setTooltip('Clear')
@@ -599,6 +600,7 @@ function renderColorSetting(
 		})
 		.addExtraButton((component) => {
 			clearButton = component;
+		component.extraSettingsEl.addClass('ba-clear-button');
 			component
 				.setIcon('x')
 				.setTooltip('Clear')
@@ -741,6 +743,7 @@ function renderIconAlignmentSetting(
 
 	setting.addExtraButton((component) => {
 		clearButton = component;
+		component.extraSettingsEl.addClass('ba-clear-button');
 		component
 			.setIcon('x')
 			.setTooltip('Clear')

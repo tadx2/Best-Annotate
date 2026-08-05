@@ -309,6 +309,7 @@ function renderColorOverride(
 		})
 		.addExtraButton((component) => {
 			clearButton = component;
+			component.extraSettingsEl.addClass('ba-clear-button');
 			component
 				.setIcon('x')
 				.setTooltip('Clear')
@@ -351,6 +352,7 @@ function renderNumberOverride(
 		})
 		.addExtraButton((component) => {
 			clearButton = component;
+			component.extraSettingsEl.addClass('ba-clear-button');
 			component
 				.setIcon('x')
 				.setTooltip('Clear')
@@ -386,6 +388,7 @@ function renderTextOverride(
 		})
 		.addExtraButton((component) => {
 			clearButton = component;
+			component.extraSettingsEl.addClass('ba-clear-button');
 			component
 				.setIcon('x')
 				.setTooltip('Clear')
