@@ -1,4 +1,4 @@
-import { ButtonComponent } from 'obsidian';
+import { ButtonComponent, setIcon } from 'obsidian';
 import { FastGroupPreset } from '../fast-group';
 
 export type PreviewSelectionState =
@@ -27,21 +27,22 @@ export class ButtonsSet {
 		private readonly containerEl: HTMLElement,
 		private readonly callbacks: ButtonsSetCallbacks,
 	) {
-		this.cancelRow = containerEl.createDiv('ba-buttons-set-cancel-row');
+		const contentEl = containerEl.createDiv('ba-buttons-set-content');
+		this.cancelRow = contentEl.createDiv('ba-buttons-set-cancel-row');
 		const cancelButton = new ButtonComponent(this.cancelRow)
 			.setIcon('x')
 			.setTooltip('Cancel')
 			.onClick(() => this.callbacks.onCancel());
 		cancelButton.buttonEl.setAttribute('aria-label', 'Cancel');
 
-		this.fastGroupSection = containerEl.createDiv(
+		this.fastGroupSection = contentEl.createDiv(
 			'ba-buttons-set-fast-group',
 		);
 		this.fastGroupRow = this.fastGroupSection.createDiv(
 			'ba-annotate-segment-action-row',
 		);
 
-		this.rangeSection = containerEl.createDiv('ba-buttons-set-range');
+		this.rangeSection = contentEl.createDiv('ba-buttons-set-range');
 		const rangeRow = this.rangeSection.createDiv(
 			'ba-annotate-segment-action-row',
 		);
@@ -51,7 +52,7 @@ export class ButtonsSet {
 		createGroupButton.buttonEl.addClass('ba-annotate-group-button');
 		createGroupButton.buttonEl.createSpan({ text: 'Create' });
 
-		this.groupSection = containerEl.createDiv('ba-buttons-set-group');
+		this.groupSection = contentEl.createDiv('ba-buttons-set-group');
 		const groupRow = this.groupSection.createDiv(
 			'ba-annotate-segment-action-row',
 		);
@@ -67,6 +68,11 @@ export class ButtonsSet {
 			.setIcon('eraser')
 			.onClick(() => this.callbacks.onClearGroupSetting());
 		clearButton.buttonEl.createSpan({ text: 'Clear' });
+
+		const dragHandle = containerEl.createDiv('ba-buttons-set-drag-handle');
+		setIcon(dragHandle, 'grip-horizontal');
+		dragHandle.setAttribute('aria-label', 'Move buttons');
+		this.makeDraggable(dragHandle);
 	}
 
 	setFastGroupPresets(presets: FastGroupPreset[]) {
@@ -96,10 +102,67 @@ export class ButtonsSet {
 
 	update(selection: PreviewSelectionState, canPaste: boolean) {
 		this.containerEl.hidden = selection.type === 'none';
-		this.cancelRow.hidden = selection.type !== 'range';
+		this.cancelRow.hidden = selection.type === 'none';
 		this.fastGroupSection.hidden = selection.type === 'none';
 		this.rangeSection.hidden = selection.type !== 'range';
 		this.groupSection.hidden = selection.type !== 'group';
 		this.pasteButton.buttonEl.disabled = !canPaste;
+	}
+
+	private makeDraggable(handleEl: HTMLElement) {
+		handleEl.addEventListener('pointerdown', (event) => {
+			if (event.button !== 0) return;
+			event.preventDefault();
+			const parent = this.containerEl.parentElement;
+			if (!parent) return;
+
+			const parentRect = parent.getBoundingClientRect();
+			const rect = this.containerEl.getBoundingClientRect();
+			const startLeft = rect.left - parentRect.left;
+			const startTop = rect.top - parentRect.top;
+			const startX = event.clientX;
+			const startY = event.clientY;
+			// Switch from right/bottom anchoring to explicit left/top.
+			this.containerEl.setCssProps({
+				left: `${startLeft}px`,
+				top: `${startTop}px`,
+				right: 'auto',
+				bottom: 'auto',
+			});
+
+			const onMove = (moveEvent: PointerEvent) => {
+				const maxLeft = Math.max(
+					parent.clientWidth - this.containerEl.offsetWidth,
+					0,
+				);
+				const maxTop = Math.max(
+					parent.clientHeight - this.containerEl.offsetHeight,
+					0,
+				);
+				const left = Math.min(
+					Math.max(startLeft + moveEvent.clientX - startX, 0),
+					maxLeft,
+				);
+				const top = Math.min(
+					Math.max(startTop + moveEvent.clientY - startY, 0),
+					maxTop,
+				);
+				this.containerEl.setCssProps({
+					left: `${left}px`,
+					top: `${top}px`,
+				});
+			};
+			const onEnd = () => {
+				handleEl.removeClass('is-dragging');
+				handleEl.removeEventListener('pointermove', onMove);
+				handleEl.removeEventListener('pointerup', onEnd);
+				handleEl.removeEventListener('pointercancel', onEnd);
+			};
+			handleEl.setPointerCapture(event.pointerId);
+			handleEl.addClass('is-dragging');
+			handleEl.addEventListener('pointermove', onMove);
+			handleEl.addEventListener('pointerup', onEnd);
+			handleEl.addEventListener('pointercancel', onEnd);
+		});
 	}
 }
