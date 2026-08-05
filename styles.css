@@ -15,24 +15,28 @@
 	display: grid;
 	flex: 1;
 	grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+	grid-template-rows: auto minmax(0, 1fr);
 	gap: var(--size-4-6);
 	min-height: 0;
-	overflow-y: auto;
+	overflow: hidden;
 }
 
 .ba-annotate-column {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
-	block-size: 32rem;
+	min-height: 0;
+	overflow: hidden;
 }
 
 .ba-annotate-groups-list {
 	display: flex;
+	flex: 1;
 	flex-direction: column;
 	gap: var(--size-2-2);
-	max-height: 30vh;
+	min-height: 0;
 	overflow-y: auto;
+	scrollbar-gutter: stable;
 }
 
 .ba-annotate-groups-list-item {
@@ -186,6 +190,9 @@
 .ba-annotate-tab-panel {
 	grid-column: 1 / -1;
 	min-width: 0;
+	min-height: 0;
+	overflow-y: auto;
+	scrollbar-gutter: stable;
 }
 
 .ba-annotate-tab-panel[hidden] {
@@ -196,6 +203,7 @@
 	display: grid;
 	grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 	gap: var(--size-4-6);
+	overflow: hidden;
 }
 
 .ba-annotate-final-preview {
@@ -508,6 +516,7 @@
 	box-sizing: border-box;
 	min-block-size: 0;
 	overflow-y: auto;
+	scrollbar-gutter: stable;
 }
 
 .ba-annotate-group-settings-tabs {
@@ -554,6 +563,7 @@
 
 	.ba-annotate-text-group-tab-panel {
 		grid-template-columns: minmax(0, 1fr);
+		overflow-y: auto;
 	}
 }
 
