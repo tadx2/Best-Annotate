@@ -456,64 +456,6 @@
 	font-size: var(--font-ui-large);
 }
 
-.ba-text-group-base {
-	background-color: var(--ba-text-background-color);
-	color: var(--ba-text-color);
-}
-
-.ba-text-group u {
-	text-decoration-color: var(--ba-underline-color);
-	text-decoration-thickness: var(--ba-underline-thickness);
-	text-underline-offset: var(--ba-underline-offset);
-}
-
-.ba-text-group rt {
-	color: var(--ba-annotate-color);
-	font-size: var(--ba-annotate-font-size);
-	white-space: nowrap;
-	word-break: keep-all;
-	overflow-wrap: normal;
-	position: relative;
-	left: var(--ba-annotate-offset-x);
-	top: var(--ba-annotate-offset-y);
-}
-
-.ba-text-group[data-ba-annotate-position='over']
-	.ba-text-group-annotation {
-	ruby-position: over;
-}
-
-.ba-text-group[data-ba-annotate-position='over'] rt {
-	padding-bottom: var(--ba-annotate-spacing);
-}
-
-.ba-text-group[data-ba-annotate-position='under']
-	.ba-text-group-annotation {
-	ruby-position: under;
-}
-
-.ba-text-group[data-ba-annotate-position='under'] rt {
-	padding-top: var(--ba-annotate-spacing);
-}
-
-.ba-text-group[data-ba-annotate-visible='false'] rt {
-	display: none;
-}
-
-.ba-text-group[data-ba-annotate-compact='true']
-	.ba-text-group-annotation {
-	ruby-align: center;
-}
-
-.ba-text-group[data-ba-annotate-compact='true'] rt {
-	line-height: 1;
-}
-
-.ba-text-group[data-ba-annotate-compact='false']
-	.ba-text-group-annotation {
-	ruby-align: space-around;
-}
-
 .ba-annotate-group-settings {
 	flex: 1;
 	box-sizing: border-box;

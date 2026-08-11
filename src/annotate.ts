@@ -20,7 +20,7 @@ export function registerAnnotateMenu(
 			const cursor = editor.getCursor();
 
 			menu.addItem((item) => {
-				item.setTitle('Add annotate')
+				item.setTitle('Create annotate')
 					.setIcon('message-square-plus')
 					.onClick(() => {
 						const appearance = cloneAnnotateBlockAppearance(
