@@ -33,10 +33,36 @@ Not available yet.
 
 ## Usage
 
+**Quick start**
+
+![Quick start: create an annotate block and style text from scratch](assets/demo-quick-start.gif)
+
 1. Open a note, right-click in the editor and choose **Create annotate**.
 2. Enter the text and save — an annotate block is inserted at the cursor.
 3. Click the block to open the editor: select text to create groups, apply underlines or phonetic marks, and adjust the block appearance.
 4. Use the fast group preset buttons to apply saved styles with one click.
+
+**Create an annotate block**
+
+![Creating an annotate block and styling text groups with fast group presets](assets/demo-create-annotate-by-preset.gif)
+
+**Style text groups**
+
+![Styling a text group: annotate size, position and spacing](assets/demo-text-group-style.gif)
+
+Fine-tune each group in the **Text Group** tab: annotate size, horizontal/vertical position, spacing, underline and colors.
+
+**Adjust the paragraph**
+
+![Adjusting paragraph appearance: text size, max width, line height and border](assets/demo-paragraph-appearance.gif)
+
+Adjust the block appearance in the **Paragraph** tab: text size, max width, line height, border and more.
+
+**Configure preset buttons**
+
+![Configuring a fast group preset button in settings with live preview](assets/demo-preset-buttons.gif)
+
+Each preset button has its own settings page with a live preview: button title, icon, colors, and the full group appearance (annotate text, color, size, position and more).
 
 ## Settings
 

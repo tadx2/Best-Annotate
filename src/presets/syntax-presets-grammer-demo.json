@@ -1,0 +1,122 @@
+[
+  {
+    "title": "exampleA",
+    "description": "exampleA",
+    "icon": "",
+    "buttonColor": "#e03131",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#e03131",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "exampleA",
+      "annotateColor": "#e03131",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "exampleB",
+    "description": "exampleB",
+    "icon": "",
+    "buttonColor": "#f76707",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#f76707",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "exampleB",
+      "annotateColor": "#f76707",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "exampleC",
+    "description": "exampleC",
+    "icon": "",
+    "buttonColor": "#2f9e44",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#2f9e44",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "exampleC",
+      "annotateColor": "#2f9e44",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "exampleD",
+    "description": "exampleD",
+    "icon": "",
+    "buttonColor": "#1971c2",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#1971c2",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "exampleD",
+      "annotateColor": "#1971c2",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "exampleE",
+    "description": "exampleE",
+    "icon": "",
+    "buttonColor": "#9c36b5",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#9c36b5",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "exampleE",
+      "annotateColor": "#9c36b5",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  }
+]
