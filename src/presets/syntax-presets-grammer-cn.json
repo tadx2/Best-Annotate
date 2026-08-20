@@ -1,6 +1,5 @@
 [
   {
-    "id": "syntax-subject",
     "title": "主语",
     "description": "Subject",
     "icon": "",
@@ -25,7 +24,6 @@
     }
   },
   {
-    "id": "syntax-predicate",
     "title": "谓语",
     "description": "Predicate",
     "icon": "",
@@ -50,7 +48,6 @@
     }
   },
   {
-    "id": "syntax-object",
     "title": "宾语",
     "description": "Object",
     "icon": "",
@@ -75,7 +72,6 @@
     }
   },
   {
-    "id": "syntax-complement",
     "title": "补语",
     "description": "Complement",
     "icon": "",
@@ -100,7 +96,6 @@
     }
   },
   {
-    "id": "syntax-adverbial",
     "title": "状语",
     "description": "Adverbial",
     "icon": "",

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- 背景渐变 -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+
+    <!-- 高光效果 -->
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+
+    <!-- 阴影 -->
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#3B82F6" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- 外圆角矩形背景 -->
+  <rect x="32" y="32" width="448" height="448" rx="96" ry="96" fill="url(#bgGrad)" filter="url(#shadow)"/>
+
+  <!-- 顶部高光 -->
+  <rect x="32" y="32" width="448" height="224" rx="96" ry="96" fill="url(#highlight)"/>
+
+  <!-- 内部圆角矩形（文档/页面） -->
+  <rect x="96" y="120" width="240" height="280" rx="24" ry="24" fill="#FFFFFF" opacity="0.95"/>
+
+  <!-- 文档上的横线（文本行） -->
+  <rect x="128" y="168" width="176" height="14" rx="7" fill="#E2E8F0"/>
+  <rect x="128" y="208" width="144" height="14" rx="7" fill="#E2E8F0"/>
+  <rect x="128" y="248" width="160" height="14" rx="7" fill="#E2E8F0"/>
+  <rect x="128" y="288" width="120" height="14" rx="7" fill="#E2E8F0"/>
+
+  <!-- 高亮标记（黄色荧光笔效果） -->
+  <rect x="120" y="200" width="192" height="28" rx="6" fill="#FBBF24" opacity="0.85"/>
+
+  <!-- 钢笔/标注笔 -->
+  <g transform="translate(300, 180) rotate(-35)">
+    <!-- 笔身 -->
+    <rect x="0" y="0" width="28" height="140" rx="8" fill="#1E293B"/>
+    <!-- 笔夹 -->
+    <rect x="20" y="20" width="6" height="50" rx="3" fill="#64748B"/>
+    <!-- 笔尖金属环 -->
+    <rect x="-2" y="130" width="32" height="12" rx="4" fill="#94A3B8"/>
+    <!-- 笔尖 -->
+    <polygon points="14,142 6,168 22,168" fill="#F8FAFC"/>
+  </g>
+
+  <!-- 小星星/闪光点（表示"Best"） -->
+  <g transform="translate(400, 100)">
+    <polygon points="0,-16 4,-4 16,0 4,4 0,16 -4,4 -16,0 -4,-4" fill="#FBBF24"/>
+  </g>
+
+  <!-- 底部小圆点装饰 -->
+  <circle cx="400" cy="380" r="12" fill="#FFFFFF" opacity="0.4"/>
+  <circle cx="360" cy="400" r="8" fill="#FFFFFF" opacity="0.3"/>
+</svg>

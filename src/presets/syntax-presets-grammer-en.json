@@ -1,0 +1,122 @@
+[
+  {
+    "title": "Subject",
+    "description": "The person or thing performing the action",
+    "icon": "",
+    "buttonColor": "#e03131",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#e03131",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "Subject",
+      "annotateColor": "#e03131",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "Predicate",
+    "description": "The action or state of the subject",
+    "icon": "",
+    "buttonColor": "#f76707",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#f76707",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "Predicate",
+      "annotateColor": "#f76707",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "Object",
+    "description": "The receiver of the action",
+    "icon": "",
+    "buttonColor": "#2f9e44",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#2f9e44",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "Object",
+      "annotateColor": "#2f9e44",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "Complement",
+    "description": "Completes the meaning of the subject or object",
+    "icon": "",
+    "buttonColor": "#1971c2",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#1971c2",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "Complement",
+      "annotateColor": "#1971c2",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  },
+  {
+    "title": "Adverbial",
+    "description": "Modifies the verb, adjective, or whole sentence",
+    "icon": "",
+    "buttonColor": "#9c36b5",
+    "buttonTextColor": "#ffffff",
+    "appearance": {
+      "textColor": null,
+      "textBackgroundColor": null,
+      "underline": true,
+      "underlineColor": "#9c36b5",
+      "underlineThickness": null,
+      "underlineOffset": null,
+      "annotate": "Adverbial",
+      "annotateColor": "#9c36b5",
+      "annotateFontSize": null,
+      "annotateOffsetX": null,
+      "annotateOffsetY": null,
+      "annotateSpacing": null,
+      "annotateVisible": null,
+      "annotatePosition": "under",
+      "annotateCompact": null
+    }
+  }
+]
