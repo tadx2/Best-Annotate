@@ -6,6 +6,8 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
+![An annotate block showing styled text groups, underlines and phonetic marks](assets/demo.png)
+
 An Obsidian plugin for annotating your notes with styled text groups, underlines and phonetic marks.
 
 ## Features
