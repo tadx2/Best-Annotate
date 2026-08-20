@@ -3,9 +3,8 @@
 	"name": "Best Annotate",
 	"version": "1.0.0",
 	"minAppVersion": "1.13.0",
-	"description": "The best way to annotate your notes.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Annotate your notes with styled text groups, underlines and phonetic marks.",
+	"author": "tadx2",
+	"authorUrl": "https://github.com/tadx2",
 	"isDesktopOnly": false
 }
